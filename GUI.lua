@@ -52,7 +52,7 @@ function GUI.Create(Config, Controller)
     MinButton.TextSize = 20
     MinButton.BackgroundColor3 = Color3.fromRGB(65, 65, 80)
     MinButton.TextColor3 = Color3.new(1, 1, 1)
-    MinButton.Parent = TitleBar
+    MinButton.Parent = Frame
     MinButton.ZIndex = 3
 
     local ExitButton = Instance.new("TextButton")
