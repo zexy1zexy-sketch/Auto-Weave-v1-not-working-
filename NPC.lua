@@ -30,18 +30,31 @@ function NPC.IsAlive(model)
         and root ~= nil
 end
 
+local function NormalizeName(name)
+    name = string.lower(name or "")
+    name = string.gsub(name, "%(%d+%)$", "")
+    name = string.gsub(name, "[%s_%-]", "")
+
+    return name
+end
+
 function NPC.FindTarget(targetName, lockedTarget)
     if NPC.IsAlive(lockedTarget) then
         return lockedTarget
     end
 
-    local searchName = string.lower(targetName or "")
+    local searchName = NormalizeName(targetName)
+
+    if searchName == "" then
+        return nil
+    end
 
     for _, object in ipairs(Workspace:GetDescendants()) do
         if object:IsA("Model") and not IsPlayerCharacter(object) then
-            local name = string.lower(object.Name)
+            local name = NormalizeName(object.Name)
 
-            if name == searchName and NPC.IsAlive(object) then
+            if string.find(name, searchName, 1, true)
+                and NPC.IsAlive(object) then
                 return object
             end
         end
