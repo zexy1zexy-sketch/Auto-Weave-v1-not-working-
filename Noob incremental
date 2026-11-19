@@ -1,0 +1,334 @@
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+
+local Player = Players.LocalPlayer
+local Enabled = false
+local TargetName = "noob"
+local Running = true
+
+local function GetRoot(model)
+    if not model then return nil end
+    return model:FindFirstChild("HumanoidRootPart")
+        or model.PrimaryPart
+        or model:FindFirstChild("UpperTorso")
+        or model:FindFirstChild("Torso")
+end
+
+local function FindNPC(name)
+    local search = string.lower(name)
+    local best, bestScore = nil, -1
+
+    for _, obj in ipairs(Workspace:GetDescendants()) do
+        if obj:IsA("Model")
+            and Players:GetPlayerFromCharacter(obj) == nil then
+
+            local root = GetRoot(obj)
+            local humanoid = obj:FindFirstChildOfClass("Humanoid")
+
+            if root and humanoid then
+                local modelName = string.lower(obj.Name)
+
+                if modelName == search then
+                    return obj
+                elseif string.find(modelName, search, 1, true) then
+                    if #modelName > bestScore then
+                        best = obj
+                        bestScore = #modelName
+                    end
+                end
+            end
+        end
+    end
+
+    return best
+end
+
+local function TeleportToNPC()
+    local npc = FindNPC(TargetName)
+
+    if not npc then
+        return false, "NPC not found!"
+    end
+
+    local root = GetRoot(npc)
+    local character = Player.Character
+
+    if not root or not character then
+        return false, "Character unavailable"
+    end
+
+    character:PivotTo(root.CFrame * CFrame.new(0, 0, 4))
+
+    return true, "Teleported to " .. npc.Name
+end
+
+-- GUI
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "NoobIncrementalTP"
+gui.ResetOnSpawn = false
+
+local parent
+pcall(function()
+    parent = gethui()
+end)
+
+gui.Parent = parent or game:GetService("CoreGui")
+
+local function Create(class, props, parentObj)
+    local obj = Instance.new(class)
+
+    for k, v in pairs(props) do
+        obj[k] = v
+    end
+
+    obj.Parent = parentObj
+    return obj
+end
+
+local main = Create("Frame", {
+    Size = UDim2.fromOffset(320, 285),
+    Position = UDim2.new(0.5, -160, 0.5, -142),
+    BackgroundColor3 = Color3.fromRGB(19, 21, 31),
+    BorderSizePixel = 0,
+    Active = true,
+    Draggable = true
+}, gui)
+
+Create("UICorner", {
+    CornerRadius = UDim.new(0, 13)
+}, main)
+
+Create("UIStroke", {
+    Color = Color3.fromRGB(95, 75, 220),
+    Thickness = 1.5
+}, main)
+
+local header = Create("Frame", {
+    Size = UDim2.new(1, 0, 0, 48),
+    BackgroundColor3 = Color3.fromRGB(31, 30, 51),
+    BorderSizePixel = 0
+}, main)
+
+Create("UICorner", {
+    CornerRadius = UDim.new(0, 13)
+}, header)
+
+Create("TextLabel", {
+    Size = UDim2.new(1, -95, 1, 0),
+    Position = UDim2.fromOffset(13, 0),
+    BackgroundTransparency = 1,
+    Text = "NOOB INCREMENTAL",
+    TextColor3 = Color3.fromRGB(210, 205, 255),
+    Font = Enum.Font.GothamBold,
+    TextSize = 15,
+    TextXAlignment = Enum.TextXAlignment.Left
+}, header)
+
+local minimize = Create("TextButton", {
+    Size = UDim2.fromOffset(32, 30),
+    Position = UDim2.new(1, -76, 0, 9),
+    BackgroundColor3 = Color3.fromRGB(75, 70, 125),
+    Text = "—",
+    TextColor3 = Color3.new(1, 1, 1),
+    Font = Enum.Font.GothamBold,
+    TextSize = 18
+}, header)
+
+Create("UICorner", {
+    CornerRadius = UDim.new(0, 8)
+}, minimize)
+
+local close = Create("TextButton", {
+    Size = UDim2.fromOffset(32, 30),
+    Position = UDim2.new(1, -38, 0, 9),
+    BackgroundColor3 = Color3.fromRGB(160, 55, 75),
+    Text = "X",
+    TextColor3 = Color3.new(1, 1, 1),
+    Font = Enum.Font.GothamBold,
+    TextSize = 14
+}, header)
+
+Create("UICorner", {
+    CornerRadius = UDim.new(0, 8)
+}, close)
+
+local function Label(text, y, height)
+    return Create("TextLabel", {
+        Size = UDim2.new(1, -28, 0, height),
+        Position = UDim2.fromOffset(14, y),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = Color3.fromRGB(195, 195, 215),
+        Font = Enum.Font.GothamMedium,
+        TextSize = 12,
+        TextXAlignment = Enum.TextXAlignment.Left
+    }, main)
+end
+
+Label("NPC SEARCH", 58, 20)
+
+local search = Create("TextBox", {
+    Size = UDim2.new(1, -28, 0, 38),
+    Position = UDim2.fromOffset(14, 81),
+    BackgroundColor3 = Color3.fromRGB(34, 36, 51),
+    TextColor3 = Color3.new(1, 1, 1),
+    PlaceholderText = "Type NPC name...",
+    PlaceholderColor3 = Color3.fromRGB(130, 130, 150),
+    Text = "noob",
+    Font = Enum.Font.Gotham,
+    TextSize = 13,
+    ClearTextOnFocus = false
+}, main)
+
+Create("UICorner", {
+    CornerRadius = UDim.new(0, 8)
+}, search)
+
+local status = Label("Status: Ready", 127, 25)
+status.TextColor3 = Color3.fromRGB(150, 220, 170)
+
+local tpButton = Create("TextButton", {
+    Size = UDim2.new(1, -28, 0, 42),
+    Position = UDim2.fromOffset(14, 159),
+    BackgroundColor3 = Color3.fromRGB(92, 75, 210),
+    Text = "TELEPORT NOW",
+    TextColor3 = Color3.new(1, 1, 1),
+    Font = Enum.Font.GothamBold,
+    TextSize = 14
+}, main)
+
+Create("UICorner", {
+    CornerRadius = UDim.new(0, 9)
+}, tpButton)
+
+local autoButton = Create("TextButton", {
+    Size = UDim2.new(1, -28, 0, 42),
+    Position = UDim2.fromOffset(14, 211),
+    BackgroundColor3 = Color3.fromRGB(65, 65, 80),
+    Text = "AUTO TP: OFF",
+    TextColor3 = Color3.new(1, 1, 1),
+    Font = Enum.Font.GothamBold,
+    TextSize = 14
+}, main)
+
+Create("UICorner", {
+    CornerRadius = UDim.new(0, 9)
+}, autoButton)
+
+Label("Search by NPC name • Updates while moving", 259, 20)
+
+-- Minimized circle
+
+local circle = Create("TextButton", {
+    Size = UDim2.fromOffset(52, 52),
+    Position = UDim2.new(0, 20, 0.5, -26),
+    BackgroundColor3 = Color3.fromRGB(92, 75, 210),
+    Text = "N",
+    TextColor3 = Color3.new(1, 1, 1),
+    Font = Enum.Font.GothamBold,
+    TextSize = 22,
+    Visible = false,
+    Active = true,
+    Draggable = true
+}, gui)
+
+Create("UICorner", {
+    CornerRadius = UDim.new(1, 0)
+}, circle)
+
+Create("UIStroke", {
+    Color = Color3.fromRGB(180, 160, 255),
+    Thickness = 2
+}, circle)
+
+local function UpdateStatus(message, color)
+    status.Text = "Status: " .. message
+    status.TextColor3 = color or Color3.fromRGB(150, 220, 170)
+end
+
+search.FocusLost:Connect(function()
+    if search.Text ~= "" then
+        TargetName = search.Text
+        local npc = FindNPC(TargetName)
+
+        if npc then
+            UpdateStatus("Found: " .. npc.Name)
+        else
+            UpdateStatus("NPC not found!", Color3.fromRGB(255, 110, 110))
+        end
+    end
+end)
+
+tpButton.MouseButton1Click:Connect(function()
+    TargetName = search.Text
+
+    if TargetName == "" then
+        UpdateStatus("Enter an NPC name!", Color3.fromRGB(255, 110, 110))
+        return
+    end
+
+    local success, message = TeleportToNPC()
+
+    UpdateStatus(
+        message,
+        success and Color3.fromRGB(150, 220, 170)
+        or Color3.fromRGB(255, 110, 110)
+    )
+end)
+
+autoButton.MouseButton1Click:Connect(function()
+    Enabled = not Enabled
+
+    autoButton.Text = Enabled and "AUTO TP: ON" or "AUTO TP: OFF"
+    autoButton.BackgroundColor3 = Enabled
+        and Color3.fromRGB(45, 145, 95)
+        or Color3.fromRGB(65, 65, 80)
+
+    if Enabled then
+        TargetName = search.Text
+        UpdateStatus("Auto teleport enabled")
+    else
+        UpdateStatus("Auto teleport disabled")
+    end
+end)
+
+minimize.MouseButton1Click:Connect(function()
+    main.Visible = false
+    circle.Visible = true
+end)
+
+circle.MouseButton1Click:Connect(function()
+    circle.Visible = false
+    main.Visible = true
+end)
+
+close.MouseButton1Click:Connect(function()
+    Running = false
+    Enabled = false
+    gui:Destroy()
+end)
+
+-- Auto teleport loop
+
+task.spawn(function()
+    while Running and gui.Parent do
+        if Enabled then
+            TargetName = search.Text
+
+            if TargetName ~= "" then
+                local success, message = TeleportToNPC()
+
+                if success then
+                    UpdateStatus(message)
+                else
+                    UpdateStatus(message, Color3.fromRGB(255, 110, 110))
+                end
+            end
+        end
+
+        task.wait(0.6)
+    end
+end)
