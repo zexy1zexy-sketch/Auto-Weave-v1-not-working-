@@ -20,7 +20,6 @@ local AutoGeneration = 0
 
 local function GetRoot(Model)
     if not Model then return nil end
-
     return Model:FindFirstChild("HumanoidRootPart")
         or Model.PrimaryPart
         or Model:FindFirstChild("UpperTorso")
@@ -29,7 +28,6 @@ end
 
 local function IsAlive(NPC)
     if not NPC or not NPC.Parent then return false end
-
     local Humanoid = NPC:FindFirstChildOfClass("Humanoid")
     return Humanoid and Humanoid.Health > 0 and GetRoot(NPC) ~= nil
 end
@@ -71,9 +69,7 @@ end
 local GuiParent = GetGuiParent()
 local OldGui = GuiParent:FindFirstChild("NoobIncrementalTP")
 
-if OldGui then
-    OldGui:Destroy()
-end
+if OldGui then OldGui:Destroy() end
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "NoobIncrementalTP"
@@ -82,8 +78,8 @@ ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = GuiParent
 
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 330, 0, 475)
-Frame.Position = UDim2.new(0.5, -165, 0.5, -237)
+Frame.Size = UDim2.new(0, 280, 0, 320)
+Frame.Position = UDim2.new(0.5, -140, 0.5, -160)
 Frame.BackgroundColor3 = Color3.fromRGB(22, 22, 29)
 Frame.BorderSizePixel = 0
 Frame.Active = true
@@ -91,7 +87,7 @@ Frame.ClipsDescendants = true
 Frame.Parent = ScreenGui
 
 local FrameCorner = Instance.new("UICorner")
-FrameCorner.CornerRadius = UDim.new(0, 13)
+FrameCorner.CornerRadius = UDim.new(0, 12)
 FrameCorner.Parent = Frame
 
 local Stroke = Instance.new("UIStroke")
@@ -106,7 +102,7 @@ local function Label(Text, Position, Size, Parent)
     L.Font = Enum.Font.Gotham
     L.Text = Text
     L.TextColor3 = Color3.fromRGB(235, 235, 245)
-    L.TextSize = 13
+    L.TextSize = 12
     L.TextXAlignment = Enum.TextXAlignment.Left
     L.Parent = Parent or Frame
     return L
@@ -121,17 +117,17 @@ local function Button(Text, Position, Size, Color, Parent)
     B.Font = Enum.Font.GothamBold
     B.Text = Text
     B.TextColor3 = Color3.new(1, 1, 1)
-    B.TextSize = 13
+    B.TextSize = 12
     B.Parent = Parent or Frame
 
     local C = Instance.new("UICorner")
-    C.CornerRadius = UDim.new(0, 8)
+    C.CornerRadius = UDim.new(0, 7)
     C.Parent = B
 
     return B
 end
 
-local function TextBox(Placeholder, Position, Size, Default)
+local function TextBox(Placeholder, Position, Size, Default, Parent)
     local B = Instance.new("TextBox")
     B.Position = Position
     B.Size = Size
@@ -142,52 +138,70 @@ local function TextBox(Placeholder, Position, Size, Default)
     B.Text = Default
     B.TextColor3 = Color3.new(1, 1, 1)
     B.PlaceholderColor3 = Color3.fromRGB(145, 145, 155)
-    B.TextSize = 13
+    B.TextSize = 12
     B.ClearTextOnFocus = false
-    B.Parent = Frame
+    B.Parent = Parent or Frame
 
     local C = Instance.new("UICorner")
-    C.CornerRadius = UDim.new(0, 7)
+    C.CornerRadius = UDim.new(0, 6)
     C.Parent = B
 
     return B
 end
 
+-- TITLE BAR
+
 local TitleBar = Instance.new("Frame")
-TitleBar.Size = UDim2.new(1, 0, 0, 43)
+TitleBar.Size = UDim2.new(1, 0, 0, 38)
 TitleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 47)
 TitleBar.BorderSizePixel = 0
 TitleBar.Parent = Frame
 
 local Title = Label(
     "NOOB INCREMENTAL",
-    UDim2.new(0, 13, 0, 0),
-    UDim2.new(1, -105, 1, 0),
+    UDim2.new(0, 10, 0, 0),
+    UDim2.new(1, -95, 1, 0),
     TitleBar
 )
 Title.Font = Enum.Font.GothamBold
-Title.TextSize = 14
+Title.TextSize = 12
 
 local ExitButton = Button(
     "X",
-    UDim2.new(1, -38, 0, 6),
-    UDim2.new(0, 32, 0, 30),
+    UDim2.new(1, -34, 0, 5),
+    UDim2.new(0, 27, 0, 27),
     Color3.fromRGB(170, 55, 65),
     TitleBar
 )
 
 local MinButton = Button(
     "−",
-    UDim2.new(1, -75, 0, 6),
-    UDim2.new(0, 32, 0, 30),
+    UDim2.new(1, -66, 0, 5),
+    UDim2.new(0, 27, 0, 27),
     Color3.fromRGB(75, 75, 100),
     TitleBar
 )
 
+-- SCROLL AREA
+
+local Scroll = Instance.new("ScrollingFrame")
+Scroll.Position = UDim2.new(0, 0, 0, 38)
+Scroll.Size = UDim2.new(1, 0, 1, -91)
+Scroll.BackgroundTransparency = 1
+Scroll.BorderSizePixel = 0
+Scroll.ScrollBarThickness = 4
+Scroll.ScrollBarImageColor3 = Color3.fromRGB(110, 110, 145)
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 490)
+Scroll.AutomaticCanvasSize = Enum.AutomaticSize.None
+Scroll.ScrollingDirection = Enum.ScrollingDirection.Y
+Scroll.Active = true
+Scroll.Parent = Frame
+
 local Status = Label(
     "Status: Ready",
-    UDim2.new(0, 14, 0, 52),
-    UDim2.new(1, -28, 0, 23)
+    UDim2.new(0, 12, 0, 8),
+    UDim2.new(1, -24, 0, 22),
+    Scroll
 )
 Status.TextColor3 = Color3.fromRGB(120, 210, 150)
 
@@ -197,67 +211,86 @@ local function SetStatus(Text)
     end
 end
 
-Label("NPC NAME", UDim2.new(0, 14, 0, 86), UDim2.new(1, -28, 0, 20))
+Label("NPC NAME", UDim2.new(0, 12, 0, 40), UDim2.new(1, -24, 0, 18), Scroll)
+
 local SearchBox = TextBox(
     "Type NPC name...",
-    UDim2.new(0, 14, 0, 110),
-    UDim2.new(1, -28, 0, 35),
-    "noob"
+    UDim2.new(0, 12, 0, 61),
+    UDim2.new(1, -24, 0, 30),
+    "noob",
+    Scroll
 )
 
 Label("AIR DELAY — seconds before going up",
-    UDim2.new(0, 14, 0, 155), UDim2.new(1, -28, 0, 20))
+    UDim2.new(0, 12, 0, 101), UDim2.new(1, -24, 0, 18), Scroll)
 
 local DelayBox = TextBox(
     "0–30 seconds",
-    UDim2.new(0, 14, 0, 179),
-    UDim2.new(1, -28, 0, 34),
-    "2"
+    UDim2.new(0, 12, 0, 122),
+    UDim2.new(1, -24, 0, 29),
+    "2",
+    Scroll
 )
 
 Label("AIR TIME — seconds spent in the air",
-    UDim2.new(0, 14, 0, 221), UDim2.new(1, -28, 0, 20))
+    UDim2.new(0, 12, 0, 160), UDim2.new(1, -24, 0, 18), Scroll)
 
 local AirBox = TextBox(
     "1–30 seconds",
-    UDim2.new(0, 14, 0, 245),
-    UDim2.new(1, -28, 0, 34),
-    "3"
+    UDim2.new(0, 12, 0, 181),
+    UDim2.new(1, -24, 0, 29),
+    "3",
+    Scroll
 )
 
 Label("TP UP HEIGHT — studs",
-    UDim2.new(0, 14, 0, 287), UDim2.new(1, -28, 0, 20))
+    UDim2.new(0, 12, 0, 219), UDim2.new(1, -24, 0, 18), Scroll)
 
 local HeightBox = TextBox(
     "1–1000 studs",
-    UDim2.new(0, 14, 0, 311),
-    UDim2.new(1, -28, 0, 34),
-    "100"
+    UDim2.new(0, 12, 0, 240),
+    UDim2.new(1, -24, 0, 29),
+    "100",
+    Scroll
 )
 
 Label("AUTO TP SPEED — cycles per second",
-    UDim2.new(0, 14, 0, 353), UDim2.new(1, -28, 0, 20))
+    UDim2.new(0, 12, 0, 278), UDim2.new(1, -24, 0, 18), Scroll)
 
 local SpeedBox = TextBox(
     "1–100",
-    UDim2.new(0, 14, 0, 377),
-    UDim2.new(1, -28, 0, 34),
-    "1"
+    UDim2.new(0, 12, 0, 299),
+    UDim2.new(1, -24, 0, 29),
+    "1",
+    Scroll
 )
+
+-- BOTTOM BUTTONS
+
+local BottomBar = Instance.new("Frame")
+BottomBar.Position = UDim2.new(0, 0, 1, -53)
+BottomBar.Size = UDim2.new(1, 0, 0, 53)
+BottomBar.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+BottomBar.BorderSizePixel = 0
+BottomBar.Parent = Frame
 
 local TeleportButton = Button(
     "TELEPORT NOW",
-    UDim2.new(0, 14, 0, 423),
-    UDim2.new(0.48, -7, 0, 42),
-    Color3.fromRGB(45, 115, 190)
+    UDim2.new(0, 10, 0, 8),
+    UDim2.new(0.5, -15, 0, 36),
+    Color3.fromRGB(45, 115, 190),
+    BottomBar
 )
 
 local AutoButton = Button(
     "AUTO TP: OFF",
-    UDim2.new(0.52, -7, 0, 423),
-    UDim2.new(0.48, -7, 0, 42),
-    Color3.fromRGB(65, 135, 85)
+    UDim2.new(0.5, 5, 0, 8),
+    UDim2.new(0.5, -15, 0, 36),
+    Color3.fromRGB(65, 135, 85),
+    BottomBar
 )
+
+-- INPUTS
 
 SearchBox.FocusLost:Connect(function()
     if SearchBox.Text ~= "" then
@@ -295,6 +328,8 @@ SpeedBox.FocusLost:Connect(function()
     SpeedBox.Text = tostring(TeleportsPerSecond)
 end)
 
+-- TELEPORT LOGIC
+
 local function Stabilize(Character)
     local Root = GetRoot(Character)
 
@@ -318,15 +353,9 @@ local function WaitCountdown(Duration, IsAuto, Generation)
         local Remaining = math.max(0, EndTime - os.clock())
 
         if IsAuto then
-            SetStatus(
-                "AUTO TPING | " ..
-                string.format("%.1f", Remaining) .. "s"
-            )
+            SetStatus("AUTO TPING | " .. string.format("%.1f", Remaining) .. "s")
         else
-            SetStatus(
-                "AIRBORNE | " ..
-                string.format("%.1f", Remaining) .. "s"
-            )
+            SetStatus("AIRBORNE | " .. string.format("%.1f", Remaining) .. "s")
         end
 
         task.wait(0.1)
@@ -385,10 +414,6 @@ local function PerformCycle(NPC, IsAuto, Generation)
         WentUp = true
         Stabilize(Character)
 
-        if IsAuto then
-            SetStatus("AUTO TPING | Airborne")
-        end
-
         WaitCountdown(AirTime, IsAuto, Generation)
 
         if WentUp and Character.Parent then
@@ -415,6 +440,8 @@ local function PerformCycle(NPC, IsAuto, Generation)
     return true
 end
 
+-- MANUAL TELEPORT
+
 TeleportButton.MouseButton1Click:Connect(function()
     if CycleBusy then
         SetStatus("Cycle already running")
@@ -432,6 +459,8 @@ TeleportButton.MouseButton1Click:Connect(function()
         PerformCycle(NPC, false, 0)
     end)
 end)
+
+-- AUTO TELEPORT
 
 local function StartAuto()
     AutoGeneration += 1
@@ -485,17 +514,17 @@ AutoButton.MouseButton1Click:Connect(function()
     end
 end)
 
+-- MINIMIZE
+
 local Minimized = false
 
 MinButton.MouseButton1Click:Connect(function()
     Minimized = not Minimized
 
     if Minimized then
-        for _, Object in ipairs(Frame:GetDescendants()) do
-            if Object:IsA("GuiObject") then
-                Object.Visible = false
-            end
-        end
+        TitleBar.Visible = false
+        Scroll.Visible = false
+        BottomBar.Visible = false
 
         Frame.Size = UDim2.new(0, 54, 0, 54)
         FrameCorner.CornerRadius = UDim.new(1, 0)
@@ -506,21 +535,21 @@ MinButton.MouseButton1Click:Connect(function()
         MinButton.Text = "N"
         MinButton.Visible = true
     else
-        Frame.Size = UDim2.new(0, 330, 0, 475)
-        FrameCorner.CornerRadius = UDim.new(0, 13)
+        Frame.Size = UDim2.new(0, 280, 0, 320)
+        FrameCorner.CornerRadius = UDim.new(0, 12)
 
-        for _, Object in ipairs(Frame:GetDescendants()) do
-            if Object:IsA("GuiObject") then
-                Object.Visible = true
-            end
-        end
+        TitleBar.Visible = true
+        Scroll.Visible = true
+        BottomBar.Visible = true
 
         MinButton.Parent = TitleBar
-        MinButton.Position = UDim2.new(1, -75, 0, 6)
-        MinButton.Size = UDim2.new(0, 32, 0, 30)
+        MinButton.Position = UDim2.new(1, -66, 0, 5)
+        MinButton.Size = UDim2.new(0, 27, 0, 27)
         MinButton.Text = "−"
     end
 end)
+
+-- EXIT
 
 ExitButton.MouseButton1Click:Connect(function()
     Running = false
@@ -528,6 +557,8 @@ ExitButton.MouseButton1Click:Connect(function()
     AutoGeneration += 1
     ScreenGui:Destroy()
 end)
+
+-- DRAGGING
 
 local Dragging = false
 local DragStart
@@ -544,6 +575,7 @@ local function BeginDrag(Input)
 end
 
 TitleBar.InputBegan:Connect(BeginDrag)
+
 Frame.InputBegan:Connect(function(Input)
     if Minimized then
         BeginDrag(Input)
