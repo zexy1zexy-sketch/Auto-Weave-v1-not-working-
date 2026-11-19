@@ -160,15 +160,15 @@ function Teleport.new(Config, NPC, onStatus)
 
                         if TeleportToNPC(Target) then
                             if os.clock() >= NextAirTime then
-                                CycleBusy = true
+    CycleBusy = true
 
-                                NextAirTime = os.clock() +
-                                    (tonumber(Config.AirInterval) or 5)
+    GoUpAndReturn(true)
 
-                                GoUpAndReturn(true)
+    NextAirTime = os.clock() +
+        (tonumber(Config.AirInterval) or 5)
 
-                                CycleBusy = false
-                            end
+    CycleBusy = false
+                                end
 
                             if Enabled then
                                 SetStatus("AUTO TPING")
