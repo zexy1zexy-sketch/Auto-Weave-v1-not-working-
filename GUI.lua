@@ -5,8 +5,6 @@ local UIS = game:GetService("UserInputService")
 local GUI = {}
 
 function GUI.Create(Config, Controller)
-    local Player = Players.LocalPlayer
-
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ShortNameHub"
     ScreenGui.ResetOnSpawn = false
@@ -20,8 +18,8 @@ function GUI.Create(Config, Controller)
     end
 
     local Frame = Instance.new("Frame")
-    Frame.Size = UDim2.fromOffset(280, 320)
-    Frame.Position = UDim2.new(0.5, -140, 0.5, -160)
+    Frame.Size = UDim2.fromOffset(280, 350)
+    Frame.Position = UDim2.new(0.5, -140, 0.5, -175)
     Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
     Frame.BorderSizePixel = 0
     Frame.Parent = ScreenGui
@@ -54,7 +52,7 @@ function GUI.Create(Config, Controller)
     MinButton.TextSize = 20
     MinButton.BackgroundColor3 = Color3.fromRGB(65, 65, 80)
     MinButton.TextColor3 = Color3.new(1, 1, 1)
-    MinButton.Parent = Frame
+    MinButton.Parent = TitleBar
     MinButton.ZIndex = 3
 
     local ExitButton = Instance.new("TextButton")
@@ -66,23 +64,102 @@ function GUI.Create(Config, Controller)
     ExitButton.TextColor3 = Color3.new(1, 1, 1)
     ExitButton.Parent = TitleBar
 
-    local Scroll = Instance.new("ScrollingFrame")
-    Scroll.Position = UDim2.fromOffset(8, 43)
-    Scroll.Size = UDim2.new(1, -16, 1, -88)
-    Scroll.BackgroundTransparency = 1
-    Scroll.BorderSizePixel = 0
-    Scroll.ScrollBarThickness = 4
-    Scroll.CanvasSize = UDim2.fromOffset(0, 410)
-    Scroll.Parent = Frame
+    -- Tab buttons
+    local TabBar = Instance.new("Frame")
+    TabBar.Size = UDim2.new(1, -16, 0, 34)
+    TabBar.Position = UDim2.fromOffset(8, 40)
+    TabBar.BackgroundTransparency = 1
+    TabBar.Parent = Frame
 
-    local Layout = Instance.new("UIListLayout")
-    Layout.Padding = UDim.new(0, 7)
-    Layout.SortOrder = Enum.SortOrder.LayoutOrder
-    Layout.Parent = Scroll
+    local function MakeTab(text, position)
+        local Button = Instance.new("TextButton")
+        Button.Size = UDim2.new(0.5, -3, 1, 0)
+        Button.Position = position
+        Button.BackgroundColor3 = Color3.fromRGB(45, 45, 58)
+        Button.TextColor3 = Color3.new(1, 1, 1)
+        Button.Text = text
+        Button.TextSize = 11
+        Button.Font = Enum.Font.GothamBold
+        Button.Parent = TabBar
 
-    local Padding = Instance.new("UIPadding")
-    Padding.PaddingBottom = UDim.new(0, 8)
-    Padding.Parent = Scroll
+        local Corner = Instance.new("UICorner")
+        Corner.CornerRadius = UDim.new(0, 6)
+        Corner.Parent = Button
+
+        return Button
+    end
+
+    local GameTab = MakeTab(
+        "NOOB INCREMENTAL",
+        UDim2.fromOffset(0, 0)
+    )
+
+    local ComingTab = MakeTab(
+        "COMING SOON",
+        UDim2.new(0.5, 3, 0, 0)
+    )
+
+    local Pages = Instance.new("Frame")
+    Pages.Position = UDim2.fromOffset(8, 82)
+    Pages.Size = UDim2.new(1, -16, 1, -126)
+    Pages.BackgroundTransparency = 1
+    Pages.Parent = Frame
+
+    local GamePage = Instance.new("ScrollingFrame")
+    GamePage.Size = UDim2.new(1, 0, 1, 0)
+    GamePage.BackgroundTransparency = 1
+    GamePage.BorderSizePixel = 0
+    GamePage.ScrollBarThickness = 4
+    GamePage.CanvasSize = UDim2.fromOffset(0, 0)
+    GamePage.Parent = Pages
+
+    local GameLayout = Instance.new("UIListLayout")
+    GameLayout.Padding = UDim.new(0, 7)
+    GameLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    GameLayout.Parent = GamePage
+
+    local GamePadding = Instance.new("UIPadding")
+    GamePadding.PaddingBottom = UDim.new(0, 8)
+    GamePadding.Parent = GamePage
+
+    local ComingPage = Instance.new("Frame")
+    ComingPage.Size = UDim2.new(1, 0, 1, 0)
+    ComingPage.BackgroundTransparency = 1
+    ComingPage.Visible = false
+    ComingPage.Parent = Pages
+
+    local ComingText = Instance.new("TextLabel")
+    ComingText.Size = UDim2.new(1, 0, 0, 50)
+    ComingText.Position = UDim2.new(0, 0, 0.35, 0)
+    ComingText.BackgroundTransparency = 1
+    ComingText.Text = "MORE FEATURES COMING SOON"
+    ComingText.TextColor3 = Color3.fromRGB(170, 170, 185)
+    ComingText.TextSize = 13
+    ComingText.Font = Enum.Font.GothamBold
+    ComingText.Parent = ComingPage
+
+    local function SelectTab(tab)
+        local IsGame = tab == "Game"
+
+        GamePage.Visible = IsGame
+        ComingPage.Visible = not IsGame
+
+        GameTab.BackgroundColor3 = IsGame
+            and Color3.fromRGB(65, 85, 130)
+            or Color3.fromRGB(45, 45, 58)
+
+        ComingTab.BackgroundColor3 = not IsGame
+            and Color3.fromRGB(65, 85, 130)
+            or Color3.fromRGB(45, 45, 58)
+    end
+
+    GameTab.Activated:Connect(function()
+        SelectTab("Game")
+    end)
+
+    ComingTab.Activated:Connect(function()
+        SelectTab("Coming")
+    end)
 
     local function MakeLabel(text)
         local Label = Instance.new("TextLabel")
@@ -93,7 +170,7 @@ function GUI.Create(Config, Controller)
         Label.TextSize = 12
         Label.Font = Enum.Font.Gotham
         Label.TextXAlignment = Enum.TextXAlignment.Left
-        Label.Parent = Scroll
+        Label.Parent = GamePage
         return Label
     end
 
@@ -109,7 +186,7 @@ function GUI.Create(Config, Controller)
         Box.TextSize = 13
         Box.Font = Enum.Font.Gotham
         Box.ClearTextOnFocus = false
-        Box.Parent = Scroll
+        Box.Parent = GamePage
 
         Box.FocusLost:Connect(function()
             callback(Box.Text)
@@ -126,7 +203,7 @@ function GUI.Create(Config, Controller)
         Button.Text = text
         Button.TextSize = 13
         Button.Font = Enum.Font.GothamBold
-        Button.Parent = Scroll
+        Button.Parent = GamePage
 
         Button.Activated:Connect(callback)
 
@@ -139,37 +216,25 @@ function GUI.Create(Config, Controller)
         Status.Text = "STATUS: " .. text
     end
 
-    local SearchBox = MakeBox(
-        "NPC NAME",
-        Config.TargetName,
-        function(value)
-            Config.TargetName = value
-            Controller.SetTargetName(value)
-        end
-    )
+    MakeBox("NPC NAME", Config.TargetName, function(value)
+        Config.TargetName = value
+        Controller.SetTargetName(value)
+    end)
 
     MakeBox("AIR INTERVAL (SECONDS)", Config.AirInterval, function(value)
-        Config.AirInterval = math.clamp(
-            tonumber(value) or 5, 1, 30
-        )
+        Config.AirInterval = math.clamp(tonumber(value) or 5, 1, 30)
     end)
 
     MakeBox("AIR TIME (SECONDS)", Config.AirTime, function(value)
-        Config.AirTime = math.clamp(
-            tonumber(value) or 3, 1, 30
-        )
+        Config.AirTime = math.clamp(tonumber(value) or 3, 1, 30)
     end)
 
     MakeBox("TP HEIGHT (STUDS)", Config.AirHeight, function(value)
-        Config.AirHeight = math.clamp(
-            tonumber(value) or 100, 1, 1000
-        )
+        Config.AirHeight = math.clamp(tonumber(value) or 100, 1, 1000)
     end)
 
     MakeBox("TP SPEED", Config.TeleportsPerSecond, function(value)
-        Config.TeleportsPerSecond = math.clamp(
-            tonumber(value) or 1, 0.1, 100
-        )
+        Config.TeleportsPerSecond = math.clamp(tonumber(value) or 1, 0.1, 100)
     end)
 
     MakeButton("TELEPORT NOW", function()
@@ -188,37 +253,75 @@ function GUI.Create(Config, Controller)
         end
     end, Color3.fromRGB(45, 125, 75))
 
-    local BottomBar = Instance.new("Frame")
-    BottomBar.Size = UDim2.new(1, -16, 0, 32)
-    BottomBar.Position = UDim2.new(0, 8, 1, -38)
-    BottomBar.BackgroundTransparency = 1
-    BottomBar.Parent = Frame
-
     local Minimized = false
+    local BubbleDragging = false
+    local BubbleDragStart
+    local BubbleStartPosition
 
     MinButton.Activated:Connect(function()
         Minimized = not Minimized
 
         if Minimized then
             TitleBar.Visible = false
-            Scroll.Visible = false
-            BottomBar.Visible = false
+            TabBar.Visible = false
+            Pages.Visible = false
+
             Frame.Size = UDim2.fromOffset(54, 54)
             Frame.BackgroundColor3 = Color3.fromRGB(65, 85, 130)
+
             MinButton.Size = UDim2.fromOffset(54, 54)
             MinButton.Position = UDim2.fromOffset(0, 0)
             MinButton.Text = "SN"
             MinButton.TextSize = 15
         else
-            Frame.Size = UDim2.fromOffset(280, 320)
+            Frame.Size = UDim2.fromOffset(280, 350)
             Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 32)
+
             TitleBar.Visible = true
-            Scroll.Visible = true
-            BottomBar.Visible = true
+            TabBar.Visible = true
+            Pages.Visible = true
+
             MinButton.Size = UDim2.fromOffset(30, 27)
             MinButton.Position = UDim2.new(1, -65, 0, 4)
             MinButton.Text = "-"
             MinButton.TextSize = 20
+        end
+    end)
+
+    -- Drag the minimized bubble
+    MinButton.InputBegan:Connect(function(input)
+        if not Minimized then
+            return
+        end
+
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            BubbleDragging = true
+            BubbleDragStart = input.Position
+            BubbleStartPosition = Frame.Position
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if BubbleDragging and (
+            input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch
+        ) then
+            local Delta = input.Position - BubbleDragStart
+
+            Frame.Position = UDim2.new(
+                BubbleStartPosition.X.Scale,
+                BubbleStartPosition.X.Offset + Delta.X,
+                BubbleStartPosition.Y.Scale,
+                BubbleStartPosition.Y.Offset + Delta.Y
+            )
+        end
+    end)
+
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            BubbleDragging = false
         end
     end)
 
@@ -227,6 +330,7 @@ function GUI.Create(Config, Controller)
         ScreenGui:Destroy()
     end)
 
+    -- Drag the full window using the title bar
     local Dragging = false
     local DragStart
     local StartPosition
@@ -263,10 +367,10 @@ function GUI.Create(Config, Controller)
         end
     end)
 
-    Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        Scroll.CanvasSize = UDim2.fromOffset(
+    GameLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+        GamePage.CanvasSize = UDim2.fromOffset(
             0,
-            Layout.AbsoluteContentSize.Y + 15
+            GameLayout.AbsoluteContentSize.Y + 15
         )
     end)
 
