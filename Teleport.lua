@@ -5,7 +5,6 @@ local Teleport = {}
 
 function Teleport.new(Config, NPC, onStatus)
     local Player = Players.LocalPlayer
-
     local Controller = {}
 
     local Enabled = false
@@ -41,9 +40,16 @@ function Teleport.new(Config, NPC, onStatus)
             return false
         end
 
-        Character:PivotTo(
-            Root.CFrame * CFrame.new(0, 0, 4)
-        )
+        local Success, Error = pcall(function()
+            Character:PivotTo(
+                Root.CFrame * CFrame.new(0, 0, 4)
+            )
+        end)
+
+        if not Success then
+            SetStatus("TP ERROR: " .. tostring(Error))
+            return false
+        end
 
         return true
     end
@@ -52,10 +58,12 @@ function Teleport.new(Config, NPC, onStatus)
         local Character = GetCharacter()
 
         if not Character then
-            return
+            SetStatus("CHARACTER NOT FOUND")
+            return false
         end
 
         local OriginalPosition = Character:GetPivot()
+
         local Height = math.clamp(
             tonumber(Config.AirHeight) or 100,
             1,
@@ -68,9 +76,16 @@ function Teleport.new(Config, NPC, onStatus)
             30
         )
 
-        Character:PivotTo(
-            OriginalPosition + Vector3.new(0, Height, 0)
-        )
+        local Success, Error = pcall(function()
+            Character:PivotTo(
+                OriginalPosition + Vector3.new(0, Height, 0)
+            )
+        end)
+
+        if not Success then
+            SetStatus("AIR TP ERROR: " .. tostring(Error))
+            return false
+        end
 
         local StartTime = os.clock()
 
@@ -90,18 +105,35 @@ function Teleport.new(Config, NPC, onStatus)
             end
 
             task.wait(0.1)
+
+            Character = GetCharacter()
+
+            if not Character then
+                SetStatus("CHARACTER LOST")
+                return false
+            end
         end
 
         Character = GetCharacter()
 
         if Character then
-            Character:PivotTo(OriginalPosition)
+            local ReturnSuccess, ReturnError = pcall(function()
+                Character:PivotTo(OriginalPosition)
+            end)
+
+            if not ReturnSuccess then
+                SetStatus("RETURN ERROR: " .. tostring(ReturnError))
+                return false
+            end
         end
+
+        return true
     end
 
     function Controller.SetTargetName(name)
         Config.TargetName = name
         LockedNPC = nil
+        SetStatus("TARGET UPDATED")
     end
 
     function Controller.TeleportNow()
@@ -112,12 +144,22 @@ function Teleport.new(Config, NPC, onStatus)
         task.spawn(function()
             CycleBusy = true
 
-            local Target = NPC.FindTarget(
-                Config.TargetName,
-                nil
-            )
+            local Success, Error = pcall(function()
+                local Target = NPC.FindTarget(
+                    Config.TargetName,
+                    nil
+                )
 
-            if Target and TeleportToNPC(Target) then
+                if not Target then
+                    SetStatus("NPC NOT FOUND")
+                    return
+                end
+
+                if not TeleportToNPC(Target) then
+                    SetStatus("TELEPORT FAILED")
+                    return
+                end
+
                 SetStatus("TELEPORTED")
 
                 task.wait(
@@ -130,8 +172,10 @@ function Teleport.new(Config, NPC, onStatus)
 
                 GoUpAndReturn(false)
                 SetStatus("READY")
-            else
-                SetStatus("NPC NOT FOUND")
+            end)
+
+            if not Success then
+                SetStatus("ERROR: " .. tostring(Error))
             end
 
             CycleBusy = false
@@ -144,40 +188,55 @@ function Teleport.new(Config, NPC, onStatus)
         end
 
         Enabled = true
+
         NextAirTime = os.clock() +
-            (tonumber(Config.AirInterval) or 5)
+            math.clamp(
+                tonumber(Config.AirInterval) or 5,
+                1,
+                30
+            )
 
         task.spawn(function()
             while Enabled do
                 if not CycleBusy then
-                    local Target = NPC.FindTarget(
-                        Config.TargetName,
-                        LockedNPC
-                    )
+                    CycleBusy = true
 
-                    if Target then
-                        LockedNPC = Target
+                    local Success, Error = pcall(function()
+                        local Target = NPC.FindTarget(
+                            Config.TargetName,
+                            LockedNPC
+                        )
 
-                        if TeleportToNPC(Target) then
-                            if os.clock() >= NextAirTime then
-    CycleBusy = true
+                        if Target then
+                            LockedNPC = Target
 
-    GoUpAndReturn(true)
+                            if TeleportToNPC(Target) then
+                                if os.clock() >= NextAirTime then
+                                    GoUpAndReturn(true)
 
-    NextAirTime = os.clock() +
-        (tonumber(Config.AirInterval) or 5)
-
-    CycleBusy = false
+                                    NextAirTime = os.clock() +
+                                        math.clamp(
+                                            tonumber(Config.AirInterval) or 5,
+                                            1,
+                                            30
+                                        )
                                 end
 
-                            if Enabled then
-                                SetStatus("AUTO TPING")
+                                if Enabled then
+                                    SetStatus("AUTO TPING")
+                                end
                             end
+                        else
+                            LockedNPC = nil
+                            SetStatus("WAITING FOR NPC")
                         end
-                    else
-                        LockedNPC = nil
-                        SetStatus("WAITING FOR NPC")
+                    end)
+
+                    if not Success then
+                        SetStatus("AUTO ERROR: " .. tostring(Error))
                     end
+
+                    CycleBusy = false
                 end
 
                 local Speed = math.clamp(
