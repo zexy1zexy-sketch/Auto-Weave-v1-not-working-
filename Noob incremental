@@ -11,7 +11,7 @@ local Running = true
 local CycleBusy = false
 local LockedNPC = nil
 
-local AirDelay = 2
+local AirInterval = 5
 local AirTime = 3
 local AirHeight = 100
 local TeleportsPerSecond = 1
@@ -68,7 +68,6 @@ end
 
 local GuiParent = GetGuiParent()
 local OldGui = GuiParent:FindFirstChild("NoobIncrementalTP")
-
 if OldGui then OldGui:Destroy() end
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -192,7 +191,6 @@ Scroll.BorderSizePixel = 0
 Scroll.ScrollBarThickness = 4
 Scroll.ScrollBarImageColor3 = Color3.fromRGB(110, 110, 145)
 Scroll.CanvasSize = UDim2.new(0, 0, 0, 490)
-Scroll.AutomaticCanvasSize = Enum.AutomaticSize.None
 Scroll.ScrollingDirection = Enum.ScrollingDirection.Y
 Scroll.Active = true
 Scroll.Parent = Frame
@@ -221,14 +219,14 @@ local SearchBox = TextBox(
     Scroll
 )
 
-Label("AIR DELAY — seconds before going up",
+Label("AIR INTERVAL — seconds between upward TPs",
     UDim2.new(0, 12, 0, 101), UDim2.new(1, -24, 0, 18), Scroll)
 
-local DelayBox = TextBox(
-    "0–30 seconds",
+local IntervalBox = TextBox(
+    "1–30 seconds",
     UDim2.new(0, 12, 0, 122),
     UDim2.new(1, -24, 0, 29),
-    "2",
+    "5",
     Scroll
 )
 
@@ -290,7 +288,7 @@ local AutoButton = Button(
     BottomBar
 )
 
--- INPUTS
+-- INPUT SETTINGS
 
 SearchBox.FocusLost:Connect(function()
     if SearchBox.Text ~= "" then
@@ -300,9 +298,9 @@ SearchBox.FocusLost:Connect(function()
     end
 end)
 
-DelayBox.FocusLost:Connect(function()
-    AirDelay = math.clamp(tonumber(DelayBox.Text) or AirDelay, 0, 30)
-    DelayBox.Text = tostring(AirDelay)
+IntervalBox.FocusLost:Connect(function()
+    AirInterval = math.clamp(tonumber(IntervalBox.Text) or AirInterval, 1, 30)
+    IntervalBox.Text = tostring(AirInterval)
 end)
 
 AirBox.FocusLost:Connect(function()
@@ -321,14 +319,14 @@ end)
 
 SpeedBox.FocusLost:Connect(function()
     TeleportsPerSecond = math.clamp(
-        math.floor(tonumber(SpeedBox.Text) or TeleportsPerSecond),
-        1,
+        tonumber(SpeedBox.Text) or TeleportsPerSecond,
+        0.1,
         100
     )
     SpeedBox.Text = tostring(TeleportsPerSecond)
 end)
 
--- TELEPORT LOGIC
+-- CHARACTER HELPERS
 
 local function Stabilize(Character)
     local Root = GetRoot(Character)
@@ -339,98 +337,72 @@ local function Stabilize(Character)
     end
 end
 
-local function WaitCountdown(Duration, IsAuto, Generation)
-    local EndTime = os.clock() + Duration
+local function TeleportToNPC(NPC)
+    local Character = Player.Character
+    local NPCRoot = GetRoot(NPC)
 
-    while Running and os.clock() < EndTime do
-        if IsAuto and (
-            not AutoEnabled
-            or Generation ~= AutoGeneration
-        ) then
-            return false
-        end
-
-        local Remaining = math.max(0, EndTime - os.clock())
-
-        if IsAuto then
-            SetStatus("AUTO TPING | " .. string.format("%.1f", Remaining) .. "s")
-        else
-            SetStatus("AIRBORNE | " .. string.format("%.1f", Remaining) .. "s")
-        end
-
-        task.wait(0.1)
-    end
-
-    return Running and (
-        not IsAuto
-        or (AutoEnabled and Generation == AutoGeneration)
-    )
-end
-
-local function PerformCycle(NPC, IsAuto, Generation)
-    if CycleBusy or not IsAlive(NPC) then
+    if not Character or not Character.Parent or not NPCRoot then
         return false
     end
 
-    CycleBusy = true
+    Character:PivotTo(NPCRoot.CFrame * CFrame.new(0, 0, 4))
+    return true
+end
 
+-- UPWARD TELEPORT
+
+local function GoUpAndReturn(IsAuto, Generation)
     local Character = Player.Character
-    local OriginalPosition
+
+    if not Character or not Character.Parent then
+        return false
+    end
+
+    local OriginalPosition = Character:GetPivot()
     local WentUp = false
 
     local Success, ErrorMessage = pcall(function()
-        if not Character or not Character.Parent then
-            SetStatus("Waiting for character")
-            return
-        end
-
-        local NPCRoot = GetRoot(NPC)
-        if not NPCRoot then return end
-
-        Character:PivotTo(NPCRoot.CFrame * CFrame.new(0, 0, 4))
-        task.wait(0.15)
-
-        if not Character.Parent then return end
-
-        OriginalPosition = Character:GetPivot()
-
-        if AirDelay > 0 then
-            if IsAuto then
-                SetStatus("AUTO TPING | Preparing")
-            else
-                SetStatus("Preparing air TP")
-            end
-
-            if not WaitCountdown(AirDelay, IsAuto, Generation) then
-                return
-            end
-        end
-
-        if not Character.Parent then return end
-
         Character:PivotTo(
             OriginalPosition + Vector3.new(0, AirHeight, 0)
         )
+
         WentUp = true
         Stabilize(Character)
 
-        WaitCountdown(AirTime, IsAuto, Generation)
+        local EndTime = os.clock() + AirTime
 
-        if WentUp and Character.Parent then
-            Character:PivotTo(OriginalPosition)
-            Stabilize(Character)
-            WentUp = false
+        while Running and os.clock() < EndTime do
+            if IsAuto and (
+                not AutoEnabled
+                or Generation ~= AutoGeneration
+            ) then
+                break
+            end
+
+            local Remaining = math.max(0, EndTime - os.clock())
+
+            if IsAuto then
+                SetStatus(
+                    "AUTO TPING | AIRBORNE " ..
+                    string.format("%.1f", Remaining) .. "s"
+                )
+            else
+                SetStatus(
+                    "AIRBORNE | " ..
+                    string.format("%.1f", Remaining) .. "s"
+                )
+            end
+
+            task.wait(0.1)
         end
     end)
 
-    if WentUp and Character and Character.Parent and OriginalPosition then
+    if WentUp and Character.Parent then
         pcall(function()
             Character:PivotTo(OriginalPosition)
             Stabilize(Character)
         end)
     end
-
-    CycleBusy = false
 
     if not Success then
         SetStatus("Error: " .. tostring(ErrorMessage))
@@ -444,7 +416,7 @@ end
 
 TeleportButton.MouseButton1Click:Connect(function()
     if CycleBusy then
-        SetStatus("Cycle already running")
+        SetStatus("Already performing a cycle")
         return
     end
 
@@ -456,11 +428,23 @@ TeleportButton.MouseButton1Click:Connect(function()
     end
 
     task.spawn(function()
-        PerformCycle(NPC, false, 0)
+        CycleBusy = true
+
+        if TeleportToNPC(NPC) then
+            SetStatus("Manual TP | Waiting for air interval")
+            task.wait(AirInterval)
+
+            if Running then
+                GoUpAndReturn(false, 0)
+            end
+        end
+
+        CycleBusy = false
+        if Running then SetStatus("Ready") end
     end)
 end)
 
--- AUTO TELEPORT
+-- CONTINUOUS AUTO TP WITH SEPARATE AIR TIMER
 
 local function StartAuto()
     AutoGeneration += 1
@@ -468,6 +452,8 @@ local function StartAuto()
 
     task.spawn(function()
         LockedNPC = nil
+
+        local NextAirTime = os.clock() + AirInterval
 
         while Running
             and AutoEnabled
@@ -477,25 +463,48 @@ local function StartAuto()
                 LockedNPC = FindNPC(TargetName)
             end
 
-            if LockedNPC and IsAlive(LockedNPC) then
-                local CurrentNPC = LockedNPC
-
-                if not CycleBusy then
-                    SetStatus("AUTO TPING | " .. CurrentNPC.Name)
-
-                    PerformCycle(CurrentNPC, true, Generation)
-
-                    if AutoEnabled and Generation == AutoGeneration then
-                        task.wait(1 / TeleportsPerSecond)
-                    end
-                else
-                    task.wait(0.1)
-                end
-            else
+            if not LockedNPC or not IsAlive(LockedNPC) then
                 SetStatus("Searching for " .. TargetName)
                 task.wait(0.5)
+                continue
+            end
+
+            if CycleBusy then
+                task.wait(0.05)
+                continue
+            end
+
+            CycleBusy = true
+
+            local CurrentNPC = LockedNPC
+
+            if not TeleportToNPC(CurrentNPC) then
+                CycleBusy = false
+                task.wait(0.1)
+                continue
+            end
+
+            SetStatus("AUTO TPING | " .. CurrentNPC.Name)
+
+            -- Check the independent upward teleport timer.
+            if os.clock() >= NextAirTime then
+                SetStatus("AUTO TPING | Going UP")
+
+                GoUpAndReturn(true, Generation)
+
+                -- Start the next air interval after returning.
+                NextAirTime = os.clock() + AirInterval
+            end
+
+            CycleBusy = false
+
+            -- This controls NPC teleport frequency.
+            if AutoEnabled and Generation == AutoGeneration then
+                task.wait(1 / TeleportsPerSecond)
             end
         end
+
+        CycleBusy = false
     end)
 end
 
