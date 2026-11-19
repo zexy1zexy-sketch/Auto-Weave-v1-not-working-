@@ -28,6 +28,14 @@ function Teleport.new(Config, NPC, onStatus)
         return Character
     end
 
+    local function GetNumber(value, fallback, minimum, maximum)
+        return math.clamp(
+            tonumber(value) or fallback,
+            minimum,
+            maximum
+        )
+    end
+
     local function TeleportToNPC(Target)
         if not NPC.IsAlive(Target) then
             return false
@@ -64,16 +72,12 @@ function Teleport.new(Config, NPC, onStatus)
 
         local OriginalPosition = Character:GetPivot()
 
-        local Height = math.clamp(
-            tonumber(Config.AirHeight) or 100,
-            1,
-            1000
+        local Height = GetNumber(
+            Config.AirHeight, 100, 1, 1000
         )
 
-        local AirTime = math.clamp(
-            tonumber(Config.AirTime) or 3,
-            1,
-            30
+        local AirTime = GetNumber(
+            Config.AirTime, 3, 1, 30
         )
 
         local Success, Error = pcall(function()
@@ -99,7 +103,7 @@ function Teleport.new(Config, NPC, onStatus)
             )
 
             if isAuto then
-                SetStatus("AUTO TPING")
+                SetStatus("AIR TIME: " .. Remaining)
             else
                 SetStatus("AIR TIME: " .. Remaining)
             end
@@ -161,17 +165,6 @@ function Teleport.new(Config, NPC, onStatus)
                 end
 
                 SetStatus("TELEPORTED")
-
-                task.wait(
-                    math.clamp(
-                        tonumber(Config.AirInterval) or 5,
-                        1,
-                        30
-                    )
-                )
-
-                GoUpAndReturn(false)
-                SetStatus("READY")
             end)
 
             if not Success then
@@ -190,11 +183,7 @@ function Teleport.new(Config, NPC, onStatus)
         Enabled = true
 
         NextAirTime = os.clock() +
-            math.clamp(
-                tonumber(Config.AirInterval) or 5,
-                1,
-                30
-            )
+            GetNumber(Config.AirInterval, 5, 1, 30)
 
         task.spawn(function()
             while Enabled do
@@ -207,28 +196,33 @@ function Teleport.new(Config, NPC, onStatus)
                             LockedNPC
                         )
 
-                        if Target then
-                            LockedNPC = Target
-
-                            if TeleportToNPC(Target) then
-                                if os.clock() >= NextAirTime then
-                                    GoUpAndReturn(true)
-
-                                    NextAirTime = os.clock() +
-                                        math.clamp(
-                                            tonumber(Config.AirInterval) or 5,
-                                            1,
-                                            30
-                                        )
-                                end
-
-                                if Enabled then
-                                    SetStatus("AUTO TPING")
-                                end
-                            end
-                        else
+                        if not Target then
                             LockedNPC = nil
                             SetStatus("WAITING FOR NPC")
+                            return
+                        end
+
+                        LockedNPC = Target
+
+                        if not TeleportToNPC(Target) then
+                            SetStatus("TELEPORT FAILED")
+                            return
+                        end
+
+                        if os.clock() >= NextAirTime then
+                            SetStatus("GOING UP")
+
+                            GoUpAndReturn(true)
+
+                            NextAirTime = os.clock() +
+                                GetNumber(
+                                    Config.AirInterval,
+                                    5,
+                                    1,
+                                    30
+                                )
+                        else
+                            SetStatus("AUTO TPING")
                         end
                     end)
 
@@ -239,8 +233,9 @@ function Teleport.new(Config, NPC, onStatus)
                     CycleBusy = false
                 end
 
-                local Speed = math.clamp(
-                    tonumber(Config.TeleportsPerSecond) or 1,
+                local Speed = GetNumber(
+                    Config.TeleportsPerSecond,
+                    1,
                     0.1,
                     100
                 )
