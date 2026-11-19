@@ -4,31 +4,19 @@ local UIS = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
 local Player = Players.LocalPlayer
-local TargetName = "noob"
 
+local TargetName = "noob"
 local AutoEnabled = false
 local Running = true
-local TeleportsPerSecond = 1
-local AirTime = 3
-local AirDelay = 2
-local AirHeight = 100
-
-local AutoGeneration = 0
 local CycleBusy = false
 local LockedNPC = nil
 
-local function GetGuiParent()
-    if typeof(gethui) == "function" then
-        return gethui()
-    end
-    return game:GetService("CoreGui")
-end
+local AirDelay = 2
+local AirTime = 3
+local AirHeight = 100
+local TeleportsPerSecond = 1
 
-local GuiParent = GetGuiParent()
-local OldGui = GuiParent:FindFirstChild("NoobIncrementalTP")
-if OldGui then
-    OldGui:Destroy()
-end
+local AutoGeneration = 0
 
 local function GetRoot(Model)
     if not Model then return nil end
@@ -40,23 +28,17 @@ local function GetRoot(Model)
 end
 
 local function IsAlive(NPC)
-    if not NPC or not NPC.Parent then
-        return false
-    end
+    if not NPC or not NPC.Parent then return false end
 
     local Humanoid = NPC:FindFirstChildOfClass("Humanoid")
-    local Root = GetRoot(NPC)
-
-    return Humanoid ~= nil
-        and Humanoid.Health > 0
-        and Root ~= nil
+    return Humanoid and Humanoid.Health > 0 and GetRoot(NPC) ~= nil
 end
 
 local function FindNPC(Name)
     local Search = string.lower(Name or "")
     if Search == "" then return nil end
 
-    local PartialMatch = nil
+    local Partial
 
     for _, Object in ipairs(Workspace:GetDescendants()) do
         if Object:IsA("Model")
@@ -70,14 +52,27 @@ local function FindNPC(Name)
                 return Object
             end
 
-            if not PartialMatch
-                and string.find(ObjectName, Search, 1, true) then
-                PartialMatch = Object
+            if not Partial and string.find(ObjectName, Search, 1, true) then
+                Partial = Object
             end
         end
     end
 
-    return PartialMatch
+    return Partial
+end
+
+local function GetGuiParent()
+    if typeof(gethui) == "function" then
+        return gethui()
+    end
+    return game:GetService("CoreGui")
+end
+
+local GuiParent = GetGuiParent()
+local OldGui = GuiParent:FindFirstChild("NoobIncrementalTP")
+
+if OldGui then
+    OldGui:Destroy()
 end
 
 local ScreenGui = Instance.new("ScreenGui")
@@ -87,8 +82,8 @@ ScreenGui.IgnoreGuiInset = true
 ScreenGui.Parent = GuiParent
 
 local Frame = Instance.new("Frame")
-Frame.Size = UDim2.new(0, 330, 0, 425)
-Frame.Position = UDim2.new(0.5, -165, 0.5, -212)
+Frame.Size = UDim2.new(0, 330, 0, 475)
+Frame.Position = UDim2.new(0.5, -165, 0.5, -237)
 Frame.BackgroundColor3 = Color3.fromRGB(22, 22, 29)
 Frame.BorderSizePixel = 0
 Frame.Active = true
@@ -99,65 +94,63 @@ local FrameCorner = Instance.new("UICorner")
 FrameCorner.CornerRadius = UDim.new(0, 13)
 FrameCorner.Parent = Frame
 
-local FrameStroke = Instance.new("UIStroke")
-FrameStroke.Color = Color3.fromRGB(75, 75, 100)
-FrameStroke.Thickness = 1.3
-FrameStroke.Parent = Frame
+local Stroke = Instance.new("UIStroke")
+Stroke.Color = Color3.fromRGB(75, 75, 100)
+Stroke.Parent = Frame
 
-local function MakeLabel(Text, Position, Size, Parent)
-    local Label = Instance.new("TextLabel")
-    Label.BackgroundTransparency = 1
-    Label.Position = Position
-    Label.Size = Size
-    Label.Font = Enum.Font.Gotham
-    Label.Text = Text
-    Label.TextColor3 = Color3.fromRGB(235, 235, 245)
-    Label.TextSize = 13
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    Label.Parent = Parent or Frame
-    return Label
+local function Label(Text, Position, Size, Parent)
+    local L = Instance.new("TextLabel")
+    L.BackgroundTransparency = 1
+    L.Position = Position
+    L.Size = Size
+    L.Font = Enum.Font.Gotham
+    L.Text = Text
+    L.TextColor3 = Color3.fromRGB(235, 235, 245)
+    L.TextSize = 13
+    L.TextXAlignment = Enum.TextXAlignment.Left
+    L.Parent = Parent or Frame
+    return L
 end
 
-local function MakeButton(Text, Position, Size, Color)
-    local Button = Instance.new("TextButton")
-    Button.Position = Position
-    Button.Size = Size
-    Button.BackgroundColor3 = Color
-    Button.BorderSizePixel = 0
-    Button.Font = Enum.Font.GothamBold
-    Button.Text = Text
-    Button.TextColor3 = Color3.new(1, 1, 1)
-    Button.TextSize = 13
-    Button.AutoButtonColor = true
-    Button.Parent = Frame
+local function Button(Text, Position, Size, Color, Parent)
+    local B = Instance.new("TextButton")
+    B.Position = Position
+    B.Size = Size
+    B.BackgroundColor3 = Color
+    B.BorderSizePixel = 0
+    B.Font = Enum.Font.GothamBold
+    B.Text = Text
+    B.TextColor3 = Color3.new(1, 1, 1)
+    B.TextSize = 13
+    B.Parent = Parent or Frame
 
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 8)
-    Corner.Parent = Button
+    local C = Instance.new("UICorner")
+    C.CornerRadius = UDim.new(0, 8)
+    C.Parent = B
 
-    return Button
+    return B
 end
 
-local function MakeBox(Placeholder, Position, Size, Default)
-    local Box = Instance.new("TextBox")
-    Box.Position = Position
-    Box.Size = Size
-    Box.BackgroundColor3 = Color3.fromRGB(38, 38, 49)
-    Box.BorderSizePixel = 0
-    Box.Font = Enum.Font.Gotham
-    Box.PlaceholderText = Placeholder
-    Box.Text = Default
-    Box.TextColor3 = Color3.new(1, 1, 1)
-    Box.PlaceholderColor3 = Color3.fromRGB(145, 145, 155)
-    Box.TextSize = 13
-    Box.ClearTextOnFocus = false
-    Box.Parent = Frame
+local function TextBox(Placeholder, Position, Size, Default)
+    local B = Instance.new("TextBox")
+    B.Position = Position
+    B.Size = Size
+    B.BackgroundColor3 = Color3.fromRGB(38, 38, 49)
+    B.BorderSizePixel = 0
+    B.Font = Enum.Font.Gotham
+    B.PlaceholderText = Placeholder
+    B.Text = Default
+    B.TextColor3 = Color3.new(1, 1, 1)
+    B.PlaceholderColor3 = Color3.fromRGB(145, 145, 155)
+    B.TextSize = 13
+    B.ClearTextOnFocus = false
+    B.Parent = Frame
 
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 7)
-    Corner.Parent = Box
+    local C = Instance.new("UICorner")
+    C.CornerRadius = UDim.new(0, 7)
+    C.Parent = B
 
-    return Box
+    return B
 end
 
 local TitleBar = Instance.new("Frame")
@@ -166,7 +159,7 @@ TitleBar.BackgroundColor3 = Color3.fromRGB(35, 35, 47)
 TitleBar.BorderSizePixel = 0
 TitleBar.Parent = Frame
 
-local Title = MakeLabel(
+local Title = Label(
     "NOOB INCREMENTAL",
     UDim2.new(0, 13, 0, 0),
     UDim2.new(1, -105, 1, 0),
@@ -175,29 +168,23 @@ local Title = MakeLabel(
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 14
 
-local ExitButton = Instance.new("TextButton")
-ExitButton.Size = UDim2.new(0, 32, 0, 30)
-ExitButton.Position = UDim2.new(1, -38, 0, 6)
-ExitButton.BackgroundColor3 = Color3.fromRGB(170, 55, 65)
-ExitButton.Text = "X"
-ExitButton.TextColor3 = Color3.new(1, 1, 1)
-ExitButton.Font = Enum.Font.GothamBold
-ExitButton.TextSize = 14
-ExitButton.Parent = TitleBar
+local ExitButton = Button(
+    "X",
+    UDim2.new(1, -38, 0, 6),
+    UDim2.new(0, 32, 0, 30),
+    Color3.fromRGB(170, 55, 65),
+    TitleBar
+)
 
-local ExitCorner = Instance.new("UICorner")
-ExitCorner.CornerRadius = UDim.new(0, 7)
-ExitCorner.Parent = ExitButton
-
-local MinButton = MakeButton(
+local MinButton = Button(
     "−",
     UDim2.new(1, -75, 0, 6),
     UDim2.new(0, 32, 0, 30),
-    Color3.fromRGB(75, 75, 100)
+    Color3.fromRGB(75, 75, 100),
+    TitleBar
 )
-MinButton.Parent = TitleBar
 
-local Status = MakeLabel(
+local Status = Label(
     "Status: Ready",
     UDim2.new(0, 14, 0, 52),
     UDim2.new(1, -28, 0, 23)
@@ -210,98 +197,93 @@ local function SetStatus(Text)
     end
 end
 
-MakeLabel(
-    "NPC NAME",
-    UDim2.new(0, 14, 0, 86),
-    UDim2.new(1, -28, 0, 20)
-)
-
-local SearchBox = MakeBox(
+Label("NPC NAME", UDim2.new(0, 14, 0, 86), UDim2.new(1, -28, 0, 20))
+local SearchBox = TextBox(
     "Type NPC name...",
     UDim2.new(0, 14, 0, 110),
     UDim2.new(1, -28, 0, 35),
     "noob"
 )
 
-MakeLabel(
-    "AIR DELAY — seconds before going up",
-    UDim2.new(0, 14, 0, 155),
-    UDim2.new(1, -28, 0, 20)
-)
+Label("AIR DELAY — seconds before going up",
+    UDim2.new(0, 14, 0, 155), UDim2.new(1, -28, 0, 20))
 
-local DelayBox = MakeBox(
-    "1–30 seconds",
+local DelayBox = TextBox(
+    "0–30 seconds",
     UDim2.new(0, 14, 0, 179),
     UDim2.new(1, -28, 0, 34),
     "2"
 )
 
-MakeLabel(
-    "AIR TIME — seconds spent in the air",
-    UDim2.new(0, 14, 0, 221),
-    UDim2.new(1, -28, 0, 20)
-)
+Label("AIR TIME — seconds spent in the air",
+    UDim2.new(0, 14, 0, 221), UDim2.new(1, -28, 0, 20))
 
-local AirBox = MakeBox(
+local AirBox = TextBox(
     "1–30 seconds",
     UDim2.new(0, 14, 0, 245),
     UDim2.new(1, -28, 0, 34),
     "3"
 )
 
-MakeLabel(
-    "AUTO TP SPEED — cycles per second",
-    UDim2.new(0, 14, 0, 287),
-    UDim2.new(1, -28, 0, 20)
+Label("TP UP HEIGHT — studs",
+    UDim2.new(0, 14, 0, 287), UDim2.new(1, -28, 0, 20))
+
+local HeightBox = TextBox(
+    "1–1000 studs",
+    UDim2.new(0, 14, 0, 311),
+    UDim2.new(1, -28, 0, 34),
+    "100"
 )
 
-local SpeedBox = MakeBox(
+Label("AUTO TP SPEED — cycles per second",
+    UDim2.new(0, 14, 0, 353), UDim2.new(1, -28, 0, 20))
+
+local SpeedBox = TextBox(
     "1–100",
-    UDim2.new(0, 14, 0, 311),
+    UDim2.new(0, 14, 0, 377),
     UDim2.new(1, -28, 0, 34),
     "1"
 )
 
-local TeleportButton = MakeButton(
+local TeleportButton = Button(
     "TELEPORT NOW",
-    UDim2.new(0, 14, 0, 357),
+    UDim2.new(0, 14, 0, 423),
     UDim2.new(0.48, -7, 0, 42),
     Color3.fromRGB(45, 115, 190)
 )
 
-local AutoButton = MakeButton(
+local AutoButton = Button(
     "AUTO TP: OFF",
-    UDim2.new(0.52, -7, 0, 357),
+    UDim2.new(0.52, -7, 0, 423),
     UDim2.new(0.48, -7, 0, 42),
     Color3.fromRGB(65, 135, 85)
 )
 
-local function UpdateSearch()
-    local NewName = string.lower(SearchBox.Text)
-    if NewName ~= "" then
-        TargetName = NewName
-        SetStatus("Search set to " .. NewName)
+SearchBox.FocusLost:Connect(function()
+    if SearchBox.Text ~= "" then
+        TargetName = string.lower(SearchBox.Text)
+        LockedNPC = nil
+        SetStatus("Search set to " .. TargetName)
     end
-end
-
-SearchBox.FocusLost:Connect(UpdateSearch)
+end)
 
 DelayBox.FocusLost:Connect(function()
-    AirDelay = math.clamp(
-        tonumber(DelayBox.Text) or AirDelay,
-        0,
-        30
-    )
+    AirDelay = math.clamp(tonumber(DelayBox.Text) or AirDelay, 0, 30)
     DelayBox.Text = tostring(AirDelay)
 end)
 
 AirBox.FocusLost:Connect(function()
-    AirTime = math.clamp(
-        tonumber(AirBox.Text) or AirTime,
-        1,
-        30
-    )
+    AirTime = math.clamp(tonumber(AirBox.Text) or AirTime, 1, 30)
     AirBox.Text = tostring(AirTime)
+end)
+
+HeightBox.FocusLost:Connect(function()
+    AirHeight = math.clamp(
+        math.floor(tonumber(HeightBox.Text) or AirHeight),
+        1,
+        1000
+    )
+    HeightBox.Text = tostring(AirHeight)
 end)
 
 SpeedBox.FocusLost:Connect(function()
@@ -313,84 +295,115 @@ SpeedBox.FocusLost:Connect(function()
     SpeedBox.Text = tostring(TeleportsPerSecond)
 end)
 
-local function WaitWithCountdown(Duration, Message)
-    local EndTime = os.clock() + Duration
-
-    while Running and os.clock() < EndTime do
-        local Remaining = math.max(0, EndTime - os.clock())
-        SetStatus(Message .. ": " .. string.format("%.1f", Remaining) .. "s")
-        task.wait(math.min(0.1, Remaining))
-    end
-
-    return Running
-end
-
 local function Stabilize(Character)
     local Root = GetRoot(Character)
+
     if Root then
         Root.AssemblyLinearVelocity = Vector3.zero
         Root.AssemblyAngularVelocity = Vector3.zero
     end
 end
 
-local function PerformCycle(NPC)
-    if CycleBusy then
-        return false
+local function WaitCountdown(Duration, IsAuto, Generation)
+    local EndTime = os.clock() + Duration
+
+    while Running and os.clock() < EndTime do
+        if IsAuto and (
+            not AutoEnabled
+            or Generation ~= AutoGeneration
+        ) then
+            return false
+        end
+
+        local Remaining = math.max(0, EndTime - os.clock())
+
+        if IsAuto then
+            SetStatus(
+                "AUTO TPING | " ..
+                string.format("%.1f", Remaining) .. "s"
+            )
+        else
+            SetStatus(
+                "AIRBORNE | " ..
+                string.format("%.1f", Remaining) .. "s"
+            )
+        end
+
+        task.wait(0.1)
     end
 
-    if not IsAlive(NPC) then
+    return Running and (
+        not IsAuto
+        or (AutoEnabled and Generation == AutoGeneration)
+    )
+end
+
+local function PerformCycle(NPC, IsAuto, Generation)
+    if CycleBusy or not IsAlive(NPC) then
         return false
     end
 
     CycleBusy = true
 
+    local Character = Player.Character
+    local OriginalPosition
+    local WentUp = false
+
     local Success, ErrorMessage = pcall(function()
-        local Character = Player.Character
         if not Character or not Character.Parent then
             SetStatus("Waiting for character")
             return
         end
 
         local NPCRoot = GetRoot(NPC)
-        if not NPCRoot then
-            SetStatus("NPC root not found")
-            return
-        end
+        if not NPCRoot then return end
 
         Character:PivotTo(NPCRoot.CFrame * CFrame.new(0, 0, 4))
         task.wait(0.15)
 
-        if not Character.Parent then
-            return
-        end
+        if not Character.Parent then return end
 
-        local OriginalPosition = Character:GetPivot()
+        OriginalPosition = Character:GetPivot()
 
         if AirDelay > 0 then
-            local Continued = WaitWithCountdown(
-                AirDelay,
-                "Waiting before air TP"
-            )
+            if IsAuto then
+                SetStatus("AUTO TPING | Preparing")
+            else
+                SetStatus("Preparing air TP")
+            end
 
-            if not Continued or not Character.Parent then
+            if not WaitCountdown(AirDelay, IsAuto, Generation) then
                 return
             end
         end
 
-        SetStatus("Going up")
+        if not Character.Parent then return end
+
         Character:PivotTo(
             OriginalPosition + Vector3.new(0, AirHeight, 0)
         )
+        WentUp = true
         Stabilize(Character)
 
-        WaitWithCountdown(AirTime, "Airborne")
+        if IsAuto then
+            SetStatus("AUTO TPING | Airborne")
+        end
 
-        if Character.Parent then
-            SetStatus("Returning")
+        WaitCountdown(AirTime, IsAuto, Generation)
+
+        if WentUp and Character.Parent then
             Character:PivotTo(OriginalPosition)
             Stabilize(Character)
+            WentUp = false
         end
     end)
+
+    if WentUp and Character and Character.Parent and OriginalPosition then
+        pcall(function()
+            Character:PivotTo(OriginalPosition)
+            Stabilize(Character)
+        end)
+    end
 
     CycleBusy = false
 
@@ -404,11 +417,9 @@ end
 
 TeleportButton.MouseButton1Click:Connect(function()
     if CycleBusy then
-        SetStatus("A teleport cycle is already running")
+        SetStatus("Cycle already running")
         return
     end
-
-    UpdateSearch()
 
     local NPC = FindNPC(TargetName)
 
@@ -418,39 +429,41 @@ TeleportButton.MouseButton1Click:Connect(function()
     end
 
     task.spawn(function()
-        PerformCycle(NPC)
+        PerformCycle(NPC, false, 0)
     end)
 end)
 
 local function StartAuto()
     AutoGeneration += 1
-    local MyGeneration = AutoGeneration
+    local Generation = AutoGeneration
 
     task.spawn(function()
         LockedNPC = nil
 
         while Running
             and AutoEnabled
-            and MyGeneration == AutoGeneration do
+            and Generation == AutoGeneration do
 
             if not IsAlive(LockedNPC) then
-                LockedNPC = nil
                 LockedNPC = FindNPC(TargetName)
             end
 
             if LockedNPC and IsAlive(LockedNPC) then
-                SetStatus("Locked onto " .. LockedNPC.Name)
+                local CurrentNPC = LockedNPC
 
                 if not CycleBusy then
-                    PerformCycle(LockedNPC)
+                    SetStatus("AUTO TPING | " .. CurrentNPC.Name)
 
-                    local WaitTime = 1 / TeleportsPerSecond
-                    task.wait(WaitTime)
+                    PerformCycle(CurrentNPC, true, Generation)
+
+                    if AutoEnabled and Generation == AutoGeneration then
+                        task.wait(1 / TeleportsPerSecond)
+                    end
                 else
                     task.wait(0.1)
                 end
             else
-                SetStatus("Waiting for " .. TargetName)
+                SetStatus("Searching for " .. TargetName)
                 task.wait(0.5)
             end
         end
@@ -463,7 +476,6 @@ AutoButton.MouseButton1Click:Connect(function()
     if AutoEnabled then
         AutoButton.Text = "AUTO TP: ON"
         AutoButton.BackgroundColor3 = Color3.fromRGB(40, 165, 90)
-        SetStatus("Auto TP enabled")
         StartAuto()
     else
         AutoGeneration += 1
@@ -480,20 +492,21 @@ MinButton.MouseButton1Click:Connect(function()
 
     if Minimized then
         for _, Object in ipairs(Frame:GetDescendants()) do
-            if Object:IsA("GuiObject") and Object ~= MinButton then
+            if Object:IsA("GuiObject") then
                 Object.Visible = false
             end
         end
 
         Frame.Size = UDim2.new(0, 54, 0, 54)
         FrameCorner.CornerRadius = UDim.new(1, 0)
+
         MinButton.Parent = Frame
         MinButton.Position = UDim2.new(0, 0, 0, 0)
         MinButton.Size = UDim2.new(1, 0, 1, 0)
         MinButton.Text = "N"
         MinButton.Visible = true
     else
-        Frame.Size = UDim2.new(0, 330, 0, 425)
+        Frame.Size = UDim2.new(0, 330, 0, 475)
         FrameCorner.CornerRadius = UDim.new(0, 13)
 
         for _, Object in ipairs(Frame:GetDescendants()) do
@@ -520,13 +533,20 @@ local Dragging = false
 local DragStart
 local StartPosition
 
-TitleBar.InputBegan:Connect(function(Input)
+local function BeginDrag(Input)
     if Input.UserInputType == Enum.UserInputType.MouseButton1
         or Input.UserInputType == Enum.UserInputType.Touch then
 
         Dragging = true
         DragStart = Input.Position
         StartPosition = Frame.Position
+    end
+end
+
+TitleBar.InputBegan:Connect(BeginDrag)
+Frame.InputBegan:Connect(function(Input)
+    if Minimized then
+        BeginDrag(Input)
     end
 end)
 
