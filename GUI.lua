@@ -128,7 +128,7 @@ function GUI.Create(Config, Controller)
         Button.Font = Enum.Font.GothamBold
         Button.Parent = Scroll
 
-        Button.MouseButton1Click:Connect(callback)
+        Button.Activated:Connect(callback)
 
         return Button
     end
@@ -196,7 +196,7 @@ function GUI.Create(Config, Controller)
 
     local Minimized = false
 
-    MinButton.MouseButton1Click:Connect(function()
+    MinButton.Activated:Connect(function()
         Minimized = not Minimized
 
         if Minimized then
@@ -222,7 +222,7 @@ function GUI.Create(Config, Controller)
         end
     end)
 
-    ExitButton.MouseButton1Click:Connect(function()
+    ExitButton.Activated:Connect(function()
         Controller.Stop()
         ScreenGui:Destroy()
     end)
