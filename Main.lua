@@ -2,6 +2,11 @@
 local BaseURL =
     "https://raw.githubusercontent.com/zexy1zexy-sketch/ShortName-Hub/refs/heads/main/"
 
+-- Disable Roblox gameplay paused notification
+pcall(function()
+    game:GetService("GuiService"):SetGameplayPausedNotificationEnabled(false)
+end)
+
 local function LoadModule(name)
     local url = BaseURL .. name
 
