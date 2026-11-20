@@ -684,3 +684,105 @@ function GUI.Create(Config, Controller, Scythe, Logger)
             BubbleMoved = false
         end
     end)
+    -- Bubble movement
+    UIS.InputChanged:Connect(function(input)
+        if BubbleDragging then
+            if input == BubbleInput
+            or input.UserInputType == Enum.UserInputType.MouseMovement then
+                local delta = input.Position - BubbleStart
+
+                if delta.Magnitude > 5 then
+                    BubbleMoved = true
+                end
+
+                Frame.Position = UDim2.new(
+                    BubblePosition.X.Scale,
+                    BubblePosition.X.Offset + delta.X,
+                    BubblePosition.Y.Scale,
+                    BubblePosition.Y.Offset + delta.Y
+                )
+            end
+        end
+    end)
+
+    UIS.InputEnded:Connect(function(input)
+        if input == BubbleInput then
+            BubbleDragging = false
+
+            if not BubbleMoved and Minimized then
+                Minimized = false
+
+                Frame.Size = UDim2.fromOffset(WindowWidth, WindowHeight)
+                Frame.BackgroundColor3 = Dark
+
+                Header.Visible = true
+                Sidebar.Visible = true
+                Content.Visible = true
+
+                MinButton.Size = UDim2.fromOffset(38, 34)
+                MinButton.Position = UDim2.new(1, -88, 0, 7)
+                MinButton.Text = "—"
+                MinButton.TextSize = 19
+                MinButton.BackgroundColor3 = ButtonDark
+                MinButton.BorderSizePixel = 0
+                MinButton.ZIndex = 5
+            end
+        end
+    end)
+        -- Window dragging
+    local Dragging = false
+    local DragStart
+    local StartPosition
+
+    Header.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            Dragging = true
+            DragStart = input.Position
+            StartPosition = Frame.Position
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if Dragging then
+            if input.UserInputType == Enum.UserInputType.MouseMovement
+            or input.UserInputType == Enum.UserInputType.Touch then
+                local delta = input.Position - DragStart
+
+                Frame.Position = UDim2.new(
+                    StartPosition.X.Scale,
+                    StartPosition.X.Offset + delta.X,
+                    StartPosition.Y.Scale,
+                    StartPosition.Y.Offset + delta.Y
+                )
+            end
+        end
+    end)
+
+    UIS.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            Dragging = false
+        end
+    end)
+
+    -- Exit button
+    ExitButton.Activated:Connect(function()
+        Controller.Stop()
+        Scythe.Stop()
+        ScreenGui:Destroy()
+    end)
+
+    -- Return interface controls
+    return {
+        SetStatus = SetStatus,
+        RefreshLogs = RefreshLogs,
+        Destroy = function()
+            Controller.Stop()
+            Scythe.Stop()
+            ScreenGui:Destroy()
+        end
+    }
+end
+
+return GUI
