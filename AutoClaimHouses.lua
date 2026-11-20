@@ -1,27 +1,15 @@
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
 local AutoClaimHouses = {}
 
 function AutoClaimHouses.new()
-    local Enabled = false
+    local Enabled = {
+        [1] = false,
+        [2] = false,
+        [3] = false
+    }
+
     local Speed = 50
     local Controller = {}
-
-    local function GetRemote()
-        local Net = ReplicatedStorage:FindFirstChild("__Net")
-        if not Net then
-            return nil
-        end
-
-        local Remote = Net:FindFirstChild("MainRemote")
-
-        if Remote and Remote:IsA("RemoteEvent") then
-            return Remote
-        end
-
-        return nil
-    end
 
     function Controller.SetSpeed(value)
         Speed = math.clamp(tonumber(value) or 50, 1, 100)
@@ -31,58 +19,36 @@ function AutoClaimHouses.new()
         return Speed
     end
 
-    function Controller.Start()
-        if Enabled then
-            return true
+    function Controller.SetHouseEnabled(HouseNumber, State)
+        if Enabled[HouseNumber] == nil then
+            return false
         end
 
-        Enabled = true
-
-        task.spawn(function()
-            while Enabled do
-                local Remote = GetRemote()
-
-                if Remote then
-                    -- Claim houses 1, 2, and 3 independently.
-                    for HouseNumber = 1, 3 do
-                        if not Enabled then
-                            break
-                        end
-
-                        local Success = pcall(function()
-                            Remote:FireServer(
-                                "TouchTrickOrTreatHouse",
-                                HouseNumber
-                            )
-                        end)
-
-                        if not Success then
-                            task.wait(0.1)
-                        end
-                    end
-
-                    -- Keep the total claim rate near the selected CPS.
-                    task.wait(3 / Speed)
-                else
-                    -- Retry if MainRemote is temporarily unavailable.
-                    task.wait(1)
-                end
-            end
-        end)
-
+        Enabled[HouseNumber] = State == true
         return true
     end
 
+    function Controller.IsHouseEnabled(HouseNumber)
+        return Enabled[HouseNumber] == true
+    end
+
+    function Controller.StopHouse(HouseNumber)
+        if Enabled[HouseNumber] ~= nil then
+            Enabled[HouseNumber] = false
+        end
+    end
+
     function Controller.Stop()
-        Enabled = false
+        for HouseNumber = 1, 3 do
+            Enabled[HouseNumber] = false
+        end
     end
 
     function Controller.IsEnabled()
-        return Enabled
+        return Enabled[1] or Enabled[2] or Enabled[3]
     end
 
     return Controller
 end
 
 return AutoClaimHouses
-    
