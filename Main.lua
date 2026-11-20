@@ -2,11 +2,6 @@
 local BaseURL =
     "https://raw.githubusercontent.com/zexy1zexy-sketch/ShortName-Hub/refs/heads/main/"
 
--- Disable Roblox gameplay paused notification
-pcall(function()
-    game:GetService("GuiService"):SetGameplayPausedNotificationEnabled(false)
-end)
-
 local function LoadModule(name)
     local url = BaseURL .. name
 
@@ -26,12 +21,16 @@ local function LoadModule(name)
     return result
 end
 
+-- Load modules
 local Config = LoadModule("Config.lua")
 local NPC = LoadModule("NPC.lua")
 local Teleport = LoadModule("Teleport.lua")
 local GUI = LoadModule("GUI.lua")
+local ScytheModule = LoadModule("Scythe.lua")
 
+-- Create controllers
 local Controller
+local Scythe
 local Interface
 
 Controller = Teleport.new(Config, NPC, function(status)
@@ -40,4 +39,7 @@ Controller = Teleport.new(Config, NPC, function(status)
     end
 end)
 
-Interface = GUI.Create(Config, Controller)
+Scythe = ScytheModule.new()
+
+-- Create interface
+Interface = GUI.Create(Config, Controller, Scythe)
