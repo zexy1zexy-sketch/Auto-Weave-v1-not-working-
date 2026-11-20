@@ -5,7 +5,7 @@ local GuiService = game:GetService("GuiService")
 
 local GUI = {}
 
-function GUI.Create(Config, Controller, Scythe, Logger)
+function GUI.Create(Config, Controller, Scythe, AutoClaimHouses, Logger)
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ShortNameHub"
     ScreenGui.ResetOnSpawn = false
@@ -398,6 +398,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         if Controller.IsEnabled() then
             Controller.Stop()
             AutoButton.Text = "AUTO TP: OFF"
+    
             LogAction("Auto TP Stopped")
         else
             Controller.Start()
@@ -409,8 +410,55 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         end
     end, Color3.fromRGB(45, 115, 75))
 
-    -- SCYTHE FOLDER
-    local ScytheFolder = MakeFolder("SCYTHE")
+    -- AUTO CLAIM HOUSES FOLDER
+    local HousesFolder = MakeFolder("AUTO CLAIM HOUSES")
+
+    local HouseSpeed = 50
+    AutoClaimHouses.SetSpeed(HouseSpeed)
+
+    MakeBox(HousesFolder, "CLAIM SPEED (1-100 CPS)", HouseSpeed, function(value)
+        HouseSpeed = math.clamp(tonumber(value) or 50, 1, 100)
+        AutoClaimHouses.SetSpeed(HouseSpeed)
+        LogAction("Auto Claim Houses Speed Changed", {
+            Speed = HouseSpeed
+        })
+    end)
+
+    local HousesButton
+    local HousesStarted, HousesMessage = AutoClaimHouses.Start()
+    HousesButton = MakeButton(
+        HousesFolder,
+        HousesStarted and "AUTO CLAIM HOUSES: ON" or "AUTO CLAIM HOUSES: OFF",
+        function()
+            if AutoClaimHouses.IsEnabled() then
+                AutoClaimHouses.Stop()
+                HousesButton.Text = "AUTO CLAIM HOUSES: OFF"
+                SetStatus("AUTO CLAIM HOUSES STOPPED")
+                LogAction("Auto Claim Houses Stopped")
+            else
+                AutoClaimHouses.SetSpeed(HouseSpeed)
+                local ok, message = AutoClaimHouses.Start()
+                if ok then
+                    HousesButton.Text = "AUTO CLAIM HOUSES: ON"
+                    SetStatus("AUTO CLAIM HOUSES RUNNING")
+                    LogAction("Auto Claim Houses Started", {
+                        Speed = HouseSpeed
+                    })
+                else
+                    HousesButton.Text = "AUTO CLAIM HOUSES: OFF"
+                    SetStatus(message or "AUTO CLAIM HOUSES ERROR")
+                end
+            end
+        end,
+        Color3.fromRGB(45, 115, 75)
+    )
+
+    if not HousesStarted then
+        SetStatus(HousesMessage or "AUTO CLAIM HOUSES ERROR")
+    end
+
+    -- REMOTES FOLDER
+    local ScytheFolder = MakeFolder("REMOTES")
 
     Config.ScytheSpeed = math.clamp(tonumber(Config.ScytheSpeed) or 1, 1, 100)
 
@@ -751,7 +799,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
 
     local SoonText = Label(SoonCard, "Stay tuned for future updates!", 12, 75, White)
     SoonText.TextXAlignment = Enum.TextXAlignment.Center
-
+    
     -- MINIMIZE BUBBLE
     local Bubble = Instance.new("TextButton")
     Bubble.Name = "ShortNameBubble"
@@ -872,6 +920,10 @@ function GUI.Create(Config, Controller, Scythe, Logger)
             Scythe.Stop()
         end)
 
+        pcall(function()
+            AutoClaimHouses.Stop()
+        end)
+
         ScreenGui:Destroy()
     end)
 
@@ -885,3 +937,4 @@ function GUI.Create(Config, Controller, Scythe, Logger)
 end
 
 return GUI
+    
