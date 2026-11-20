@@ -65,9 +65,18 @@ else
 end
 
 -- Create interface
-Interface = GUI.Create(
-    Config,
-    Controller,
-    Scythe,
-    Logger
-)
+local Success, Result = pcall(function()
+    return GUI.Create(
+        Config,
+        Controller,
+        Scythe,
+        Logger
+    )
+end)
+
+if Success then
+    Interface = Result
+    print("ShortName Hub: GUI loaded successfully!")
+else
+    warn("ShortName Hub GUI ERROR: " .. tostring(Result))
+end
