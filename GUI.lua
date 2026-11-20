@@ -483,19 +483,34 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         LogContainer.CanvasSize = UDim2.fromOffset(0, LogLayout.AbsoluteContentSize.Y + 15)
     end)
 
-    local function RefreshLogs()
+
+    local LastRenderKey = nil
+    local DisplayLimit = 30
+
+    local function RefreshLogs(force)
+        if not Logger then
+            StatsLabel.Text = "LOGGER MODULE NOT LOADED"
+            return
+        end
+
+        local version = Logger:GetVersion()
+        local renderKey = tostring(version) .. "|"
+            .. SelectedCategory .. "|" .. SearchBox.Text
+
+        if not force and renderKey == LastRenderKey then
+            return
+        end
+
+        LastRenderKey = renderKey
+
         for _, child in ipairs(LogContainer:GetChildren()) do
             if child:IsA("Frame") or child:IsA("TextLabel") then
                 child:Destroy()
             end
         end
 
-        if not Logger then
-            StatsLabel.Text = "LOGGER MODULE NOT LOADED"
-            return
-        end
-
         local stats = Logger:GetStats()
+
         StatsLabel.Text = string.format(
             "TOTAL: %d  |  FIRE: %d  |  INVOKE: %d",
             stats.Total,
@@ -503,24 +518,44 @@ function GUI.Create(Config, Controller, Scythe, Logger)
             stats.InvokeServer
         )
 
-        local entries = Logger:GetLogs(SelectedCategory, SearchBox.Text)
+        local entries = Logger:GetLogs(
+            SelectedCategory,
+            SearchBox.Text
+        )
 
         if #entries == 0 then
-            local Empty = Label(LogContainer, "No matching logs found.", 11, 35, Grey)
+            local Empty = Label(
+                LogContainer,
+                "No matching logs found.",
+                11,
+                35,
+                Grey
+            )
             Empty.TextXAlignment = Enum.TextXAlignment.Center
             return
         end
 
-        for _, entry in ipairs(entries) do
+        local shown = math.min(#entries, DisplayLimit)
+
+        for i = 1, shown do
+            local entry = entries[i]
+
             local Card = Instance.new("Frame")
             Card.Size = UDim2.new(1, -4, 0, 68)
             Card.BackgroundColor3 = Panel
             Card.BorderSizePixel = 0
             Card.Parent = LogContainer
             Corner(Card, 6)
+
             Stroke(Card, Color3.fromRGB(60, 50, 80), 1)
 
-            local Name = Label(Card, entry.Name .. "  [" .. entry.Method .. "]", 10, 24, White)
+            local Name = Label(
+                Card,
+                entry.Name .. "  [" .. entry.Method .. "]",
+                10,
+                24,
+                White
+            )
             Name.Position = UDim2.fromOffset(7, 2)
             Name.Size = UDim2.new(1, -14, 0, 22)
             Name.Font = Enum.Font.GothamBold
