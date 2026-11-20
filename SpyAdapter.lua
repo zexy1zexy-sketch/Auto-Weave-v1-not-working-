@@ -36,18 +36,23 @@ local function HookRemote(remote)
     Hooked[remote] = true
 
     if remote:IsA("RemoteEvent") then
-        local success, original = pcall(function()
-            return hookfunction(remote.FireServer, function(self, ...)
-                if self == remote then
-                    Record(remote, "FireServer", {...})
-                end
+        local originalFireServer
 
-                return original(self, ...)
-            end)
+        local success, err = pcall(function()
+            originalFireServer = hookfunction(
+                remote.FireServer,
+                function(self, ...)
+                    if self == remote then
+                        Record(remote, "FireServer", {...})
+                    end
+
+                    return originalFireServer(self, ...)
+                end
+            )
         end)
 
         if not success then
-            warn("ShortName Hub: FireServer hook failed:", original)
+            warn("ShortName Hub: FireServer hook failed:", err)
             Hooked[remote] = nil
             return
         end
@@ -63,18 +68,23 @@ local function HookRemote(remote)
         end
 
     elseif remote:IsA("RemoteFunction") then
-        local success, original = pcall(function()
-            return hookfunction(remote.InvokeServer, function(self, ...)
-                if self == remote then
-                    Record(remote, "InvokeServer", {...})
-                end
+        local originalInvokeServer
 
-                return original(self, ...)
-            end)
+        local success, err = pcall(function()
+            originalInvokeServer = hookfunction(
+                remote.InvokeServer,
+                function(self, ...)
+                    if self == remote then
+                        Record(remote, "InvokeServer", {...})
+                    end
+
+                    return originalInvokeServer(self, ...)
+                end
+            )
         end)
 
         if not success then
-            warn("ShortName Hub: InvokeServer hook failed:", original)
+            warn("ShortName Hub: InvokeServer hook failed:", err)
             Hooked[remote] = nil
             return
         end
