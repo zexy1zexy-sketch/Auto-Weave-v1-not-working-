@@ -36,31 +36,37 @@ function AutoClaimHouses.new()
             return true
         end
 
-        if not GetRemote() then
-            return false, "MainRemote not found"
-        end
-
         Enabled = true
 
         task.spawn(function()
             while Enabled do
                 local Remote = GetRemote()
 
-                if not Remote then
-                    Enabled = false
-                    break
+                if Remote then
+                    -- Claim houses 1, 2, and 3 independently.
+                    for HouseNumber = 1, 3 do
+                        if not Enabled then
+                            break
+                        end
+
+                        local Success = pcall(function()
+                            Remote:FireServer(
+                                "TouchTrickOrTreatHouse",
+                                HouseNumber
+                            )
+                        end)
+
+                        if not Success then
+                            task.wait(0.1)
+                        end
+                    end
+
+                    -- Keep the total claim rate near the selected CPS.
+                    task.wait(3 / Speed)
+                else
+                    -- Retry if MainRemote is temporarily unavailable.
+                    task.wait(1)
                 end
-
-                local Success = pcall(function()
-                    Remote:FireServer("TouchTrickOrTreatHouse", 1)
-                end)
-
-                if not Success then
-                    Enabled = false
-                    break
-                end
-
-                task.wait(1 / Speed)
             end
         end)
 
@@ -79,3 +85,4 @@ function AutoClaimHouses.new()
 end
 
 return AutoClaimHouses
+    
