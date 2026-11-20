@@ -2,13 +2,10 @@
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
-local HttpService = game:GetService("HttpService")
 
 local GUI = {}
 
 function GUI.Create(Config, Controller, Scythe, Logger)
-    local Player = Players.LocalPlayer
-
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ShortNameHub"
     ScreenGui.ResetOnSpawn = false
@@ -17,14 +14,12 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     local success = pcall(function()
         ScreenGui.Parent = gethui()
     end)
-
     if not success then
         ScreenGui.Parent = game:GetService("CoreGui")
     end
 
     local Camera = workspace.CurrentCamera
     local Viewport = Camera and Camera.ViewportSize or Vector2.new(800, 600)
-
     local WindowWidth = math.max(300, math.min(620, Viewport.X - 20))
     local WindowHeight = math.max(300, math.min(430, Viewport.Y - 40))
 
@@ -35,18 +30,18 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     local White = Color3.fromRGB(240, 240, 248)
     local Grey = Color3.fromRGB(155, 155, 175)
 
-    local function Corner(object, radius)
+    local function Corner(obj, radius)
         local c = Instance.new("UICorner")
         c.CornerRadius = UDim.new(0, radius or 8)
-        c.Parent = object
+        c.Parent = obj
         return c
     end
 
-    local function Stroke(object, color, thickness)
+    local function Stroke(obj, color, thickness)
         local s = Instance.new("UIStroke")
         s.Color = color or Purple
         s.Thickness = thickness or 1
-        s.Parent = object
+        s.Parent = obj
         return s
     end
 
@@ -63,7 +58,6 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         return item
     end
 
-    -- Main window
     local Frame = Instance.new("Frame")
     Frame.Size = UDim2.fromOffset(WindowWidth, WindowHeight)
     Frame.Position = UDim2.new(0.5, -WindowWidth / 2, 0.5, -WindowHeight / 2)
@@ -73,7 +67,6 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     Corner(Frame, 12)
     Stroke(Frame, Purple, 1.3)
 
-    -- Header
     local Header = Instance.new("Frame")
     Header.Size = UDim2.new(1, 0, 0, 48)
     Header.BackgroundColor3 = Dark
@@ -81,7 +74,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     Header.Parent = Frame
     Corner(Header, 10)
 
-    local HeaderTitle = Label(Header, "  SHORTNAME HUB", 15, 48, White)
+    local HeaderTitle = Label(Header, "  SHORTNAME HUB", 15, 48)
     HeaderTitle.Font = Enum.Font.GothamBold
     HeaderTitle.Size = UDim2.new(1, -110, 1, 0)
 
@@ -110,9 +103,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     Corner(ExitButton, 8)
     Stroke(ExitButton, Purple, 1)
 
-    -- Sidebar
     local SidebarWidth = math.min(155, WindowWidth * 0.34)
-
     local Sidebar = Instance.new("Frame")
     Sidebar.Position = UDim2.fromOffset(10, 58)
     Sidebar.Size = UDim2.new(0, SidebarWidth, 1, -68)
@@ -133,19 +124,19 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     SidePadding.Parent = Sidebar
 
     local function MakeNav(text, order)
-        local Button = Instance.new("TextButton")
-        Button.Name = text
-        Button.LayoutOrder = order
-        Button.Size = UDim2.new(1, 0, 0, 43)
-        Button.BackgroundColor3 = ButtonDark
-        Button.TextColor3 = White
-        Button.Text = text
-        Button.TextSize = WindowWidth < 380 and 11 or 13
-        Button.Font = Enum.Font.GothamBold
-        Button.Parent = Sidebar
-        Corner(Button, 7)
-        Stroke(Button, Purple, 1)
-        return Button
+        local b = Instance.new("TextButton")
+        b.Name = text
+        b.LayoutOrder = order
+        b.Size = UDim2.new(1, 0, 0, 43)
+        b.BackgroundColor3 = ButtonDark
+        b.TextColor3 = White
+        b.Text = text
+        b.TextSize = WindowWidth < 380 and 11 or 13
+        b.Font = Enum.Font.GothamBold
+        b.Parent = Sidebar
+        Corner(b, 7)
+        Stroke(b, Purple, 1)
+        return b
     end
 
     local SettingsNav = MakeNav("⚙  Settings", 1)
@@ -153,7 +144,6 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     local LoggerNav = MakeNav("◉  Remote Logger", 3)
     local SoonNav = MakeNav("＋  Coming Soon", 4)
 
-    -- Content area
     local Content = Instance.new("Frame")
     Content.Position = UDim2.new(0, SidebarWidth + 20, 0, 58)
     Content.Size = UDim2.new(1, -SidebarWidth - 30, 1, -68)
@@ -163,35 +153,32 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     Corner(Content, 9)
 
     local function MakePage(name)
-        local Page = Instance.new("ScrollingFrame")
-        Page.Name = name
-        Page.Size = UDim2.new(1, -16, 1, -16)
-        Page.Position = UDim2.fromOffset(8, 8)
-        Page.BackgroundTransparency = 1
-        Page.BorderSizePixel = 0
-        Page.ScrollBarThickness = 4
-        Page.ScrollBarImageColor3 = Purple
-        Page.CanvasSize = UDim2.fromOffset(0, 0)
-        Page.Visible = false
-        Page.Parent = Content
+        local page = Instance.new("ScrollingFrame")
+        page.Name = name
+        page.Size = UDim2.new(1, -16, 1, -16)
+        page.Position = UDim2.fromOffset(8, 8)
+        page.BackgroundTransparency = 1
+        page.BorderSizePixel = 0
+        page.ScrollBarThickness = 4
+        page.ScrollBarImageColor3 = Purple
+        page.CanvasSize = UDim2.fromOffset(0, 0)
+        page.Visible = false
+        page.Parent = Content
 
-        local Layout = Instance.new("UIListLayout")
-        Layout.Padding = UDim.new(0, 8)
-        Layout.SortOrder = Enum.SortOrder.LayoutOrder
-        Layout.Parent = Page
+        local layout = Instance.new("UIListLayout")
+        layout.Padding = UDim.new(0, 8)
+        layout.SortOrder = Enum.SortOrder.LayoutOrder
+        layout.Parent = page
 
-        local Padding = Instance.new("UIPadding")
-        Padding.PaddingBottom = UDim.new(0, 10)
-        Padding.Parent = Page
+        local padding = Instance.new("UIPadding")
+        padding.PaddingBottom = UDim.new(0, 10)
+        padding.Parent = page
 
-        Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            Page.CanvasSize = UDim2.fromOffset(
-                0,
-                Layout.AbsoluteContentSize.Y + 15
-            )
+        layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            page.CanvasSize = UDim2.fromOffset(0, layout.AbsoluteContentSize.Y + 15)
         end)
 
-        return Page
+        return page
     end
 
     local SettingsPage = MakePage("Settings")
@@ -211,28 +198,16 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         SoonNav.BackgroundColor3 = page == "Soon" and Color3.fromRGB(48, 37, 67) or ButtonDark
     end
 
-    SettingsNav.Activated:Connect(function()
-        SelectPage("Settings")
-    end)
+    SettingsNav.Activated:Connect(function() SelectPage("Settings") end)
+    GameNav.Activated:Connect(function() SelectPage("Game") end)
+    LoggerNav.Activated:Connect(function() SelectPage("Logger") end)
+    SoonNav.Activated:Connect(function() SelectPage("Soon") end)
 
-    GameNav.Activated:Connect(function()
-        SelectPage("Game")
-    end)
-
-    LoggerNav.Activated:Connect(function()
-        SelectPage("Logger")
-    end)
-
-    SoonNav.Activated:Connect(function()
-        SelectPage("Soon")
-    end)
-
-    -- Settings page
+    -- SETTINGS
     Label(SettingsPage, "SETTINGS", 17, 30).Font = Enum.Font.GothamBold
     Label(SettingsPage, "General hub settings", 12, 23, Grey)
 
     local PausedDisabled = true
-
     pcall(function()
         GuiService:SetGameplayPausedNotificationEnabled(false)
     end)
@@ -256,27 +231,18 @@ function GUI.Create(Config, Controller, Scythe, Logger)
 
     PauseButton.Activated:Connect(function()
         PausedDisabled = not PausedDisabled
-
-        local success, err = pcall(function()
+        local ok, err = pcall(function()
             GuiService:SetGameplayPausedNotificationEnabled(not PausedDisabled)
         end)
-
         UpdatePauseButton()
-
-        if not success then
+        if not ok then
             Label(SettingsPage, "Could not change setting: " .. tostring(err), 10, 35, Color3.fromRGB(255, 130, 130))
         end
     end)
 
-    Label(
-        SettingsPage,
-        "When OFF, Roblox's gameplay-paused notification is disabled.",
-        11,
-        42,
-        Grey
-    )
+    Label(SettingsPage, "When OFF, Roblox's gameplay-paused notification is disabled.", 11, 42, Grey)
 
-    -- Noob Incremental page
+    -- NOOB INCREMENTAL
     Label(GamePage, "NOOB INCREMENTAL", 17, 30).Font = Enum.Font.GothamBold
     Label(GamePage, "NPC and teleport controls", 12, 22, Grey)
 
@@ -289,42 +255,37 @@ function GUI.Create(Config, Controller, Scythe, Logger)
 
     local function MakeBox(label, value, callback)
         Label(GamePage, label, 11, 20, Grey)
-
-        local Box = Instance.new("TextBox")
-        Box.Size = UDim2.new(1, 0, 0, 34)
-        Box.BackgroundColor3 = ButtonDark
-        Box.TextColor3 = White
-        Box.PlaceholderColor3 = Grey
-        Box.Text = tostring(value)
-        Box.TextSize = 13
-        Box.Font = Enum.Font.Gotham
-        Box.ClearTextOnFocus = false
-        Box.Parent = GamePage
-        Corner(Box, 6)
-        Stroke(Box, Color3.fromRGB(65, 65, 85), 1)
-
-        Box.FocusLost:Connect(function()
-            callback(Box.Text)
+        local box = Instance.new("TextBox")
+        box.Size = UDim2.new(1, 0, 0, 34)
+        box.BackgroundColor3 = ButtonDark
+        box.TextColor3 = White
+        box.PlaceholderColor3 = Grey
+        box.Text = tostring(value)
+        box.TextSize = 13
+        box.Font = Enum.Font.Gotham
+        box.ClearTextOnFocus = false
+        box.Parent = GamePage
+        Corner(box, 6)
+        Stroke(box, Color3.fromRGB(65, 65, 85), 1)
+        box.FocusLost:Connect(function()
+            callback(box.Text)
         end)
-
-        return Box
+        return box
     end
 
-    local function MakeButton(text, callback, color)
-        local Button = Instance.new("TextButton")
-        Button.Size = UDim2.new(1, 0, 0, 38)
-        Button.BackgroundColor3 = color or Color3.fromRGB(75, 55, 115)
-        Button.TextColor3 = White
-        Button.Text = text
-        Button.TextSize = 12
-        Button.Font = Enum.Font.GothamBold
-        Button.Parent = GamePage
-        Corner(Button, 7)
-        Stroke(Button, Purple, 1)
-
-        Button.Activated:Connect(callback)
-
-        return Button
+    local function MakeButton(parent, text, callback, color)
+        local b = Instance.new("TextButton")
+        b.Size = UDim2.new(1, 0, 0, 38)
+        b.BackgroundColor3 = color or Color3.fromRGB(75, 55, 115)
+        b.TextColor3 = White
+        b.Text = text
+        b.TextSize = 12
+        b.Font = Enum.Font.GothamBold
+        b.Parent = parent
+        Corner(b, 7)
+        Stroke(b, Purple, 1)
+        b.Activated:Connect(callback)
+        return b
     end
 
     MakeBox("NPC NAME", Config.TargetName, function(value)
@@ -348,13 +309,12 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         Config.TeleportsPerSecond = math.clamp(tonumber(value) or 1, 0.1, 100)
     end)
 
-    MakeButton("TELEPORT NOW", function()
+    MakeButton(GamePage, "TELEPORT NOW", function()
         Controller.TeleportNow()
     end)
 
     local AutoButton
-
-    AutoButton = MakeButton("AUTO TP: OFF", function()
+    AutoButton = MakeButton(GamePage, "AUTO TP: OFF", function()
         if Controller.IsEnabled() then
             Controller.Stop()
             AutoButton.Text = "AUTO TP: OFF"
@@ -364,35 +324,24 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         end
     end, Color3.fromRGB(45, 115, 75))
 
-    Config.ScytheSpeed = math.clamp(
-        tonumber(Config.ScytheSpeed) or 1,
-        1,
-        100
-    )
+    Config.ScytheSpeed = math.clamp(tonumber(Config.ScytheSpeed) or 1, 1, 100)
 
     MakeBox("SCYTHE ROLL SPEED (1-100 CPS)", Config.ScytheSpeed, function(value)
-        Config.ScytheSpeed = math.clamp(
-            tonumber(value) or 1,
-            1,
-            100
-        )
-
+        Config.ScytheSpeed = math.clamp(tonumber(value) or 1, 1, 100)
         Scythe.SetSpeed(Config.ScytheSpeed)
     end)
 
     Scythe.SetSpeed(Config.ScytheSpeed)
 
     local ScytheButton
-
-    ScytheButton = MakeButton("SYTHE ENCHANT AUTO ROLL: OFF", function()
+    ScytheButton = MakeButton(GamePage, "SYTHE ENCHANT AUTO ROLL: OFF", function()
         if Scythe.IsEnabled() then
             Scythe.Stop()
             ScytheButton.Text = "SYTHE ENCHANT AUTO ROLL: OFF"
             SetStatus("SCYTHE ROLL STOPPED")
         else
-            local success, message = Scythe.Start()
-
-            if success then
+            local ok, message = Scythe.Start()
+            if ok then
                 ScytheButton.Text = "SYTHE ENCHANT AUTO ROLL: ON"
                 SetStatus("SCYTHE ROLL RUNNING")
             else
@@ -402,9 +351,9 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         end
     end, Color3.fromRGB(100, 65, 160))
 
-    -- Remote Logger page
+    -- REMOTE LOGGER PAGE
     Label(LoggerPage, "REMOTE LOGGER", 17, 30).Font = Enum.Font.GothamBold
-    Label(LoggerPage, "Monitor instrumented remote activity", 11, 22, Grey)
+    Label(LoggerPage, "Monitor captured remote activity", 11, 22, Grey)
 
     local StatsLabel = Label(LoggerPage, "TOTAL: 0  |  FIRE: 0  |  INVOKE: 0", 10, 25, Grey)
 
@@ -423,7 +372,6 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     Stroke(SearchBox, Purple, 1)
 
     local SelectedCategory = "All"
-
     local CategoryFrame = Instance.new("Frame")
     CategoryFrame.Size = UDim2.new(1, 0, 0, 32)
     CategoryFrame.BackgroundTransparency = 1
@@ -459,10 +407,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     LogPadding.Parent = LogContainer
 
     LogLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-        LogContainer.CanvasSize = UDim2.fromOffset(
-            0,
-            LogLayout.AbsoluteContentSize.Y + 15
-        )
+        LogContainer.CanvasSize = UDim2.fromOffset(0, LogLayout.AbsoluteContentSize.Y + 15)
     end)
 
     local function RefreshLogs()
@@ -478,7 +423,6 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         end
 
         local stats = Logger:GetStats()
-
         StatsLabel.Text = string.format(
             "TOTAL: %d  |  FIRE: %d  |  INVOKE: %d",
             stats.Total,
@@ -486,19 +430,10 @@ function GUI.Create(Config, Controller, Scythe, Logger)
             stats.InvokeServer
         )
 
-        local entries = Logger:GetLogs(
-            SelectedCategory,
-            SearchBox.Text
-        )
+        local entries = Logger:GetLogs(SelectedCategory, SearchBox.Text)
 
         if #entries == 0 then
-            local Empty = Label(
-                LogContainer,
-                "No matching logs found.",
-                11,
-                35,
-                Grey
-            )
+            local Empty = Label(LogContainer, "No matching logs found.", 11, 35, Grey)
             Empty.TextXAlignment = Enum.TextXAlignment.Center
             return
         end
@@ -512,225 +447,176 @@ function GUI.Create(Config, Controller, Scythe, Logger)
             Corner(Card, 6)
             Stroke(Card, Color3.fromRGB(60, 50, 80), 1)
 
-            local Name = Label(
-                Card,
-                entry.Name .. "  [" .. entry.Method .. "]",
-                10,
-                24,
-                White
-            )
+            local Name = Label(Card, entry.Name .. "  [" .. entry.Method .. "]", 10, 24, White)
             Name.Position = UDim2.fromOffset(7, 2)
             Name.Size = UDim2.new(1, -14, 0, 22)
             Name.Font = Enum.Font.GothamBold
 
-            local Path = Label(
-                Card,
-                entry.Path,
-                9,
-                18,
-                Grey
-            )
+            local Path = Label(Card, entry.Path, 9, 18, Grey)
             Path.Position = UDim2.fromOffset(7, 25)
             Path.Size = UDim2.new(1, -14, 0, 18)
             Path.TextTruncate = Enum.TextTruncate.AtEnd
 
-            local Time = Label(
-                Card,
-                entry.Timestamp,
-                9,
-                17,
-                Purple
-            )
+            local Time = Label(Card, entry.Timestamp, 9, 17, Purple)
             Time.Position = UDim2.fromOffset(7, 45)
         end
     end
-
+    
+    -- LOGGER CATEGORY BUTTONS
     for index, category in ipairs(Categories) do
-        local Button = Instance.new("TextButton")
-        Button.Size = UDim2.new(0.25, -4, 1, 0)
-        Button.BackgroundColor3 = category == "All" and Purple or ButtonDark
-        Button.Text = category
-        Button.TextColor3 = White
-        Button.TextSize = 8
-        Button.Font = Enum.Font.GothamBold
-        Button.Parent = CategoryFrame
-        Corner(Button, 5)
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0.25, -4, 1, 0)
+        button.BackgroundColor3 = ButtonDark
+        button.TextColor3 = White
+        button.Text = category == "FireServer" and "Fire" or
+            category == "InvokeServer" and "Invoke" or category
+        button.TextSize = 9
+        button.Font = Enum.Font.GothamBold
+        button.Parent = CategoryFrame
+        Corner(button, 5)
 
-        CategoryButtons[category] = Button
+        CategoryButtons[category] = button
 
-        Button.Activated:Connect(function()
+        button.Activated:Connect(function()
             SelectedCategory = category
 
-            for _, name in ipairs(Categories) do
-                CategoryButtons[name].BackgroundColor3 =
-                    name == category and Purple or ButtonDark
+            for name, categoryButton in pairs(CategoryButtons) do
+                categoryButton.BackgroundColor3 =
+                    name == SelectedCategory
+                    and Color3.fromRGB(75, 50, 115)
+                    or ButtonDark
             end
 
             RefreshLogs()
         end)
     end
 
+    CategoryButtons.All.BackgroundColor3 = Color3.fromRGB(75, 50, 115)
+
     SearchBox:GetPropertyChangedSignal("Text"):Connect(RefreshLogs)
 
-    local function MakeLoggerButton(text, callback, color)
-        local Button = Instance.new("TextButton")
-        Button.Size = UDim2.new(1, 0, 0, 36)
-        Button.BackgroundColor3 = color or ButtonDark
-        Button.Text = text
-        Button.TextColor3 = White
-        Button.TextSize = 11
-        Button.Font = Enum.Font.GothamBold
-        Button.Parent = LoggerPage
-        Corner(Button, 6)
-        Stroke(Button, Purple, 1)
-        Button.Activated:Connect(callback)
-        return Button
+    -- AUTOMATIC LOGGER REFRESH
+    task.spawn(function()
+        while ScreenGui.Parent do
+            task.wait(0.5)
+
+            if LoggerPage.Visible then
+                RefreshLogs()
+            end
+        end
+    end)
+
+    -- LOGGER CONTROLS
+    local LoggerControls = Instance.new("Frame")
+    LoggerControls.Size = UDim2.new(1, 0, 0, 38)
+    LoggerControls.BackgroundTransparency = 1
+    LoggerControls.Parent = LoggerPage
+
+    local ControlsLayout = Instance.new("UIListLayout")
+    ControlsLayout.FillDirection = Enum.FillDirection.Horizontal
+    ControlsLayout.Padding = UDim.new(0, 5)
+    ControlsLayout.Parent = LoggerControls
+
+    local function MakeLoggerButton(text, callback)
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0.333, -4, 1, 0)
+        button.BackgroundColor3 = ButtonDark
+        button.TextColor3 = White
+        button.Text = text
+        button.TextSize = 10
+        button.Font = Enum.Font.GothamBold
+        button.Parent = LoggerControls
+        Corner(button, 6)
+        Stroke(button, Purple, 1)
+        button.Activated:Connect(callback)
+        return button
     end
 
-    MakeLoggerButton("COPY ALL LOGS", function()
-        if not Logger then return end
+    MakeLoggerButton("REFRESH", RefreshLogs)
 
-        local output = Logger:Export()
-
-        if setclipboard then
-            local success = pcall(function()
-                setclipboard(output)
-            end)
-
-            if success then
-                StatsLabel.Text = "ALL LOGS COPIED!"
-            else
-                StatsLabel.Text = "COPY FAILED"
-            end
-        else
-            StatsLabel.Text = "CLIPBOARD NOT SUPPORTED"
-        end
-    end, Color3.fromRGB(75, 55, 115))
-
-    MakeLoggerButton("CLEAR ALL LOGS", function()
+    MakeLoggerButton("CLEAR", function()
         if Logger then
             Logger:Clear()
-            RefreshLogs()
         end
-    end, Color3.fromRGB(125, 45, 55))
-
-    local LoggingButton
-
-    LoggingButton = MakeLoggerButton("PAUSE LOGGING", function()
-        if not Logger then return end
-
-        local enabled = not Logger.Enabled
-        Logger:SetEnabled(enabled)
-
-        LoggingButton.Text = enabled and "PAUSE LOGGING" or "RESUME LOGGING"
         RefreshLogs()
-    end, Color3.fromRGB(45, 100, 75))
+    end)
+
+    local PauseButtonLogger
+    PauseButtonLogger = MakeLoggerButton("PAUSE: OFF", function()
+        if not Logger then
+            return
+        end
+
+        Logger:SetEnabled(not Logger.Enabled)
+
+        PauseButtonLogger.Text = Logger.Enabled
+            and "PAUSE: OFF"
+            or "PAUSE: ON"
+    end)
+
+    MakeLoggerButton("COPY LOGS", function()
+        if not Logger then
+            return
+        end
+
+        local exported = Logger:Export()
+
+        if setclipboard then
+            pcall(function()
+                setclipboard(exported)
+            end)
+        end
+    end)
 
     RefreshLogs()
 
-    -- Coming Soon
-    Label(SoonPage, "COMING SOON", 18, 35).Font = Enum.Font.GothamBold
+    -- COMING SOON PAGE
+    Label(SoonPage, "COMING SOON", 17, 30).Font = Enum.Font.GothamBold
+    Label(SoonPage, "More features are being worked on.", 12, 25, Grey)
 
-    local SoonMessage = Label(
-        SoonPage,
-        "New features will appear here in future updates.",
-        12,
-        55,
-        Grey
-    )
-    SoonMessage.TextWrapped = true
+    local SoonCard = Instance.new("Frame")
+    SoonCard.Size = UDim2.new(1, 0, 0, 75)
+    SoonCard.BackgroundColor3 = ButtonDark
+    SoonCard.BorderSizePixel = 0
+    SoonCard.Parent = SoonPage
+    Corner(SoonCard, 8)
+    Stroke(SoonCard, Purple, 1)
 
-    -- Initial page
-    SelectPage("Settings")
+    local SoonText = Label(SoonCard, "Stay tuned for future updates!", 12, 75, White)
+    SoonText.TextXAlignment = Enum.TextXAlignment.Center
 
-    -- Minimize / draggable bubble
+    -- MINIMIZE BUBBLE
+    local Bubble = Instance.new("TextButton")
+    Bubble.Name = "ShortNameBubble"
+    Bubble.Size = UDim2.fromOffset(55, 55)
+    Bubble.Position = UDim2.new(0, 15, 0.5, -27)
+    Bubble.BackgroundColor3 = Dark
+    Bubble.Text = "SN"
+    Bubble.TextColor3 = White
+    Bubble.TextSize = 17
+    Bubble.Font = Enum.Font.GothamBold
+    Bubble.Visible = false
+    Bubble.Parent = ScreenGui
+    Corner(Bubble, 50)
+    Stroke(Bubble, Purple, 2)
+
     local Minimized = false
-    local BubbleDragging = false
-    local BubbleInput
-    local BubbleStart
-    local BubblePosition
-    local BubbleMoved = false
 
     MinButton.Activated:Connect(function()
-        if Minimized then return end
-
         Minimized = true
-
-        Header.Visible = false
-        Sidebar.Visible = false
-        Content.Visible = false
-
-        Frame.Size = UDim2.fromOffset(54, 54)
-        Frame.BackgroundColor3 = Purple
-
-        MinButton.Size = UDim2.fromOffset(54, 54)
-        MinButton.Position = UDim2.fromOffset(0, 0)
-        MinButton.Text = "SN"
-        MinButton.TextSize = 15
-        MinButton.BackgroundColor3 = Purple
-        MinButton.BorderSizePixel = 0
-        MinButton.ZIndex = 10
+        Frame.Visible = false
+        Bubble.Visible = true
     end)
 
-    MinButton.InputBegan:Connect(function(input)
-        if not Minimized then return end
-
-        if input.UserInputType == Enum.UserInputType.MouseButton1
-        or input.UserInputType == Enum.UserInputType.Touch then
-            BubbleDragging = true
-            BubbleInput = input
-            BubbleStart = input.Position
-            BubblePosition = Frame.Position
-            BubbleMoved = false
-        end
-    end)
-    -- Bubble movement
-    UIS.InputChanged:Connect(function(input)
-        if BubbleDragging then
-            if input == BubbleInput
-            or input.UserInputType == Enum.UserInputType.MouseMovement then
-                local delta = input.Position - BubbleStart
-
-                if delta.Magnitude > 5 then
-                    BubbleMoved = true
-                end
-
-                Frame.Position = UDim2.new(
-                    BubblePosition.X.Scale,
-                    BubblePosition.X.Offset + delta.X,
-                    BubblePosition.Y.Scale,
-                    BubblePosition.Y.Offset + delta.Y
-                )
-            end
-        end
+    Bubble.Activated:Connect(function()
+        Minimized = false
+        Frame.Visible = true
+        Bubble.Visible = false
     end)
 
-    UIS.InputEnded:Connect(function(input)
-        if input == BubbleInput then
-            BubbleDragging = false
-
-            if not BubbleMoved and Minimized then
-                Minimized = false
-
-                Frame.Size = UDim2.fromOffset(WindowWidth, WindowHeight)
-                Frame.BackgroundColor3 = Dark
-
-                Header.Visible = true
-                Sidebar.Visible = true
-                Content.Visible = true
-
-                MinButton.Size = UDim2.fromOffset(38, 34)
-                MinButton.Position = UDim2.new(1, -88, 0, 7)
-                MinButton.Text = "—"
-                MinButton.TextSize = 19
-                MinButton.BackgroundColor3 = ButtonDark
-                MinButton.BorderSizePixel = 0
-                MinButton.ZIndex = 5
-            end
-        end
-    end)
-        -- Window dragging
+    -- WINDOW DRAGGING
     local Dragging = false
+    local DragInput
     local DragStart
     local StartPosition
 
@@ -740,48 +626,96 @@ function GUI.Create(Config, Controller, Scythe, Logger)
             Dragging = true
             DragStart = input.Position
             StartPosition = Frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    Dragging = false
+                end
+            end)
+        end
+    end)
+
+    Header.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+            DragInput = input
         end
     end)
 
     UIS.InputChanged:Connect(function(input)
-        if Dragging then
-            if input.UserInputType == Enum.UserInputType.MouseMovement
-            or input.UserInputType == Enum.UserInputType.Touch then
-                local delta = input.Position - DragStart
+        if input == DragInput and Dragging then
+            local delta = input.Position - DragStart
 
-                Frame.Position = UDim2.new(
-                    StartPosition.X.Scale,
-                    StartPosition.X.Offset + delta.X,
-                    StartPosition.Y.Scale,
-                    StartPosition.Y.Offset + delta.Y
-                )
-            end
+            Frame.Position = UDim2.new(
+                StartPosition.X.Scale,
+                StartPosition.X.Offset + delta.X,
+                StartPosition.Y.Scale,
+                StartPosition.Y.Offset + delta.Y
+            )
         end
     end)
 
-    UIS.InputEnded:Connect(function(input)
+    -- BUBBLE DRAGGING
+    local BubbleDragging = false
+    local BubbleInput
+    local BubbleStart
+    local BubblePosition
+
+    Bubble.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
-            Dragging = false
+            BubbleDragging = true
+            BubbleInput = input
+            BubbleStart = input.Position
+            BubblePosition = Bubble.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    BubbleDragging = false
+                end
+            end)
         end
     end)
 
-    -- Exit button
+    Bubble.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+            BubbleInput = input
+        end
+    end)
+
+    UIS.InputChanged:Connect(function(input)
+        if input == BubbleInput and BubbleDragging then
+            local delta = input.Position - BubbleStart
+
+            Bubble.Position = UDim2.new(
+                BubblePosition.X.Scale,
+                BubblePosition.X.Offset + delta.X,
+                BubblePosition.Y.Scale,
+                BubblePosition.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    -- EXIT
     ExitButton.Activated:Connect(function()
-        Controller.Stop()
-        Scythe.Stop()
+        pcall(function()
+            Controller.Stop()
+        end)
+
+        pcall(function()
+            Scythe.Stop()
+        end)
+
         ScreenGui:Destroy()
     end)
 
-    -- Return interface controls
+    SelectPage("Settings")
+
     return {
         SetStatus = SetStatus,
         RefreshLogs = RefreshLogs,
-        Destroy = function()
-            Controller.Stop()
-            Scythe.Stop()
-            ScreenGui:Destroy()
-        end
+        ScreenGui = ScreenGui
     }
 end
 
