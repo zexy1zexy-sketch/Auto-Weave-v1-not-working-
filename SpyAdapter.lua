@@ -1,60 +1,83 @@
 
--- SHORTNAME HUB - SIMPLESPY ADAPTER
+-- SHORTNAME HUB - REMOTE SPY ADAPTER
 
 local SpyAdapter = {}
 
 local Logger
-local SimpleSpy
-
-local Connections = {}
-local WatchedRemotes = {}
 local Enabled = false
+
+local Hooked = {}
+local Connections = {}
 
 local function IsRemote(instance)
     return instance:IsA("RemoteEvent")
         or instance:IsA("RemoteFunction")
 end
 
-local function WatchRemote(remote)
-    if not Enabled or not IsRemote(remote) then
+local function Record(remote, method, args)
+    if not Enabled or not Logger then
         return
     end
 
-    if WatchedRemotes[remote] then
-        return
-    end
-
-    local method = remote:IsA("RemoteEvent")
-        and "FireServer"
-        or "InvokeServer"
-
-    local success, signal = pcall(function()
-        return SimpleSpy:GetRemoteFiredSignal(remote)
+    pcall(function()
+        Logger:Record(remote, method, args)
     end)
+end
 
-    if not success or not signal then
+local function HookRemote(remote)
+    if not Enabled or Hooked[remote] then
         return
     end
 
-    local connected, connection = pcall(function()
-        return signal:Connect(function(args)
-            if not Enabled or not Logger then
-                return
-            end
+    if not IsRemote(remote) then
+        return
+    end
 
-            pcall(function()
-                Logger:Record(
-                    remote,
-                    method,
-                    args
-                )
+    Hooked[remote] = true
+
+    if remote:IsA("RemoteEvent") then
+        local success, original = pcall(function()
+            return hookfunction(remote.FireServer, function(self, ...)
+                if self == remote then
+                    Record(remote, "FireServer", {...})
+                end
+
+                return original(self, ...)
             end)
         end)
-    end)
 
-    if connected and connection then
-        WatchedRemotes[remote] = true
-        table.insert(Connections, connection)
+        if not success then
+            warn("ShortName Hub: FireServer hook failed:", original)
+            Hooked[remote] = nil
+            return
+        end
+
+        local connected, connection = pcall(function()
+            return remote.OnClientEvent:Connect(function(...)
+                Record(remote, "OnClientEvent", {...})
+            end)
+        end)
+
+        if connected and connection then
+            table.insert(Connections, connection)
+        end
+
+    elseif remote:IsA("RemoteFunction") then
+        local success, original = pcall(function()
+            return hookfunction(remote.InvokeServer, function(self, ...)
+                if self == remote then
+                    Record(remote, "InvokeServer", {...})
+                end
+
+                return original(self, ...)
+            end)
+        end)
+
+        if not success then
+            warn("ShortName Hub: InvokeServer hook failed:", original)
+            Hooked[remote] = nil
+            return
+        end
     end
 end
 
@@ -64,17 +87,13 @@ function SpyAdapter.Start(LoggerModule)
     end
 
     if type(LoggerModule) ~= "table"
-    or type(LoggerModule.Record) ~= "function" then
+        or type(LoggerModule.Record) ~= "function" then
         warn("ShortName Hub: Invalid Logger module")
         return false
     end
 
-    local Env = getgenv and getgenv() or _G
-    SimpleSpy = Env.SimpleSpy
-
-    if not SimpleSpy
-    or type(SimpleSpy.GetRemoteFiredSignal) ~= "function" then
-        warn("ShortName Hub: SimpleSpy was not found!")
+    if type(hookfunction) ~= "function" then
+        warn("ShortName Hub: hookfunction is unavailable")
         return false
     end
 
@@ -82,14 +101,13 @@ function SpyAdapter.Start(LoggerModule)
     Enabled = true
 
     for _, instance in ipairs(game:GetDescendants()) do
-        WatchRemote(instance)
+        HookRemote(instance)
     end
 
-    local addedConnection = game.DescendantAdded:Connect(WatchRemote)
-    table.insert(Connections, addedConnection)
+    local connection = game.DescendantAdded:Connect(HookRemote)
+    table.insert(Connections, connection)
 
-    print("ShortName Hub: SpyAdapter started!")
-
+    print("ShortName Hub: Remote Logger started!")
     return true
 end
 
@@ -103,12 +121,12 @@ function SpyAdapter.Stop()
     end
 
     table.clear(Connections)
-    table.clear(WatchedRemotes)
+    table.clear(Hooked)
 
     Logger = nil
-    SimpleSpy = nil
 
-    print("ShortName Hub: SpyAdapter stopped!")
+    print("ShortName Hub: Remote Logger stopped!")
+    return true
 end
 
 return SpyAdapter
