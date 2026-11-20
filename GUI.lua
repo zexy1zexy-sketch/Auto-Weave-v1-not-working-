@@ -398,7 +398,7 @@ function GUI.Create(Config, Controller, Scythe, AutoClaimHouses, Logger)
         if Controller.IsEnabled() then
             Controller.Stop()
             AutoButton.Text = "AUTO TP: OFF"
-GUI PART 1 CONTINUES
+
     
     
             LogAction("Auto TP Stopped")
