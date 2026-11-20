@@ -398,6 +398,8 @@ function GUI.Create(Config, Controller, Scythe, AutoClaimHouses, Logger)
         if Controller.IsEnabled() then
             Controller.Stop()
             AutoButton.Text = "AUTO TP: OFF"
+GUI PART 1 CONTINUES
+    
     
             LogAction("Auto TP Stopped")
         else
@@ -409,53 +411,6 @@ function GUI.Create(Config, Controller, Scythe, AutoClaimHouses, Logger)
             })
         end
     end, Color3.fromRGB(45, 115, 75))
-
-    -- AUTO CLAIM HOUSES FOLDER
-    local HousesFolder = MakeFolder("AUTO CLAIM HOUSES")
-
-    local HouseSpeed = 50
-    AutoClaimHouses.SetSpeed(HouseSpeed)
-
-    MakeBox(HousesFolder, "CLAIM SPEED (1-100 CPS)", HouseSpeed, function(value)
-        HouseSpeed = math.clamp(tonumber(value) or 50, 1, 100)
-        AutoClaimHouses.SetSpeed(HouseSpeed)
-        LogAction("Auto Claim Houses Speed Changed", {
-            Speed = HouseSpeed
-        })
-    end)
-
-    local HousesButton
-    local HousesStarted, HousesMessage = AutoClaimHouses.Start()
-    HousesButton = MakeButton(
-        HousesFolder,
-        HousesStarted and "AUTO CLAIM HOUSES: ON" or "AUTO CLAIM HOUSES: OFF",
-        function()
-            if AutoClaimHouses.IsEnabled() then
-                AutoClaimHouses.Stop()
-                HousesButton.Text = "AUTO CLAIM HOUSES: OFF"
-                SetStatus("AUTO CLAIM HOUSES STOPPED")
-                LogAction("Auto Claim Houses Stopped")
-            else
-                AutoClaimHouses.SetSpeed(HouseSpeed)
-                local ok, message = AutoClaimHouses.Start()
-                if ok then
-                    HousesButton.Text = "AUTO CLAIM HOUSES: ON"
-                    SetStatus("AUTO CLAIM HOUSES RUNNING")
-                    LogAction("Auto Claim Houses Started", {
-                        Speed = HouseSpeed
-                    })
-                else
-                    HousesButton.Text = "AUTO CLAIM HOUSES: OFF"
-                    SetStatus(message or "AUTO CLAIM HOUSES ERROR")
-                end
-            end
-        end,
-        Color3.fromRGB(45, 115, 75)
-    )
-
-    if not HousesStarted then
-        SetStatus(HousesMessage or "AUTO CLAIM HOUSES ERROR")
-    end
 
     -- REMOTES FOLDER
     local ScytheFolder = MakeFolder("REMOTES")
@@ -497,7 +452,47 @@ function GUI.Create(Config, Controller, Scythe, AutoClaimHouses, Logger)
         end
     end, Color3.fromRGB(100, 65, 160))
 
-    
+    -- AUTO CLAIM HOUSES (INSIDE REMOTES)
+    local HouseSpeed = 50
+    AutoClaimHouses.SetSpeed(HouseSpeed)
+
+    MakeBox(ScytheFolder, "HOUSE CLAIM SPEED (1-100 CPS)", HouseSpeed, function(value)
+        HouseSpeed = math.clamp(tonumber(value) or 50, 1, 100)
+        AutoClaimHouses.SetSpeed(HouseSpeed)
+        LogAction("Auto Claim Houses Speed Changed", {
+            Speed = HouseSpeed
+        })
+    end)
+
+    local HousesButton
+    local HousesStarted = AutoClaimHouses.Start()
+    HousesButton = MakeButton(
+        ScytheFolder,
+        HousesStarted and "AUTO CLAIM HOUSES: ON" or "AUTO CLAIM HOUSES: OFF",
+        function()
+            if AutoClaimHouses.IsEnabled() then
+                AutoClaimHouses.Stop()
+                HousesButton.Text = "AUTO CLAIM HOUSES: OFF"
+                SetStatus("AUTO CLAIM HOUSES STOPPED")
+                LogAction("Auto Claim Houses Stopped")
+            else
+                AutoClaimHouses.SetSpeed(HouseSpeed)
+                local ok = AutoClaimHouses.Start()
+                if ok then
+                    HousesButton.Text = "AUTO CLAIM HOUSES: ON"
+                    SetStatus("AUTO CLAIM HOUSES RUNNING")
+                    LogAction("Auto Claim Houses Started", {
+                        Speed = HouseSpeed
+                    })
+                else
+                    HousesButton.Text = "AUTO CLAIM HOUSES: OFF"
+                    SetStatus("AUTO CLAIM HOUSES ERROR")
+                end
+            end
+        end,
+        Color3.fromRGB(45, 115, 75)
+    )
+
     -- REMOTE LOGGER PAGE
     Label(LoggerPage, "REMOTE LOGGER", 17, 30).Font = Enum.Font.GothamBold
     Label(LoggerPage, "LOCAL TEST MODE - no game remotes captured", 10, 22, Grey)
@@ -801,6 +796,7 @@ function GUI.Create(Config, Controller, Scythe, AutoClaimHouses, Logger)
     SoonText.TextXAlignment = Enum.TextXAlignment.Center
     
     -- MINIMIZE BUBBLE
+    
     local Bubble = Instance.new("TextButton")
     Bubble.Name = "ShortNameBubble"
     Bubble.Size = UDim2.fromOffset(55, 55)
