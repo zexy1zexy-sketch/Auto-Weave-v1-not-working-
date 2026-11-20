@@ -1,9 +1,9 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local AutoHouse = {}
+local AutoClaimHouses = {}
 
-function AutoHouse.new()
+function AutoClaimHouses.new()
     local Enabled = false
     local Speed = 50
     local Controller = {}
@@ -78,4 +78,4 @@ function AutoHouse.new()
     return Controller
 end
 
-return AutoHouse
+return AutoClaimHouses
