@@ -2,7 +2,7 @@
 -- SHORTNAME HUB KEY SYSTEM
 -- EDIT THESE TWO SETTINGS
 
-local HUB_KEY = "CHANGE-ME-123"
+local HUB_KEY = "key123"
 local DISCORD_INVITE = "https://discord.gg/YOUR-INVITE"
 
 -- Do not edit below unless you want to customize the UI.
