@@ -399,8 +399,8 @@ function GUI.Create(Config, Controller, Scythe, AutoClaimHouses, Logger)
             Controller.Stop()
             AutoButton.Text = "AUTO TP: OFF"
 
-    
-    
+
+
             LogAction("Auto TP Stopped")
         else
             Controller.Start()
@@ -452,46 +452,39 @@ function GUI.Create(Config, Controller, Scythe, AutoClaimHouses, Logger)
         end
     end, Color3.fromRGB(100, 65, 160))
 
-    -- AUTO CLAIM HOUSES (INSIDE REMOTES)
-    local HouseSpeed = 50
-    AutoClaimHouses.SetSpeed(HouseSpeed)
+    -- INDIVIDUAL HOUSE TOGGLES (INSIDE REMOTES)
+    local HouseButtons = {}
 
-    MakeBox(ScytheFolder, "HOUSE CLAIM SPEED (1-100 CPS)", HouseSpeed, function(value)
-        HouseSpeed = math.clamp(tonumber(value) or 50, 1, 100)
-        AutoClaimHouses.SetSpeed(HouseSpeed)
-        LogAction("Auto Claim Houses Speed Changed", {
-            Speed = HouseSpeed
-        })
-    end)
+    for HouseNumber = 1, 3 do
+        local HouseId = HouseNumber
+        local HouseButton
 
-    local HousesButton
-    local HousesStarted = false
-    HousesButton = MakeButton(
-        ScytheFolder,
-        HousesStarted and "AUTO CLAIM HOUSES: ON" or "AUTO CLAIM HOUSES: OFF",
-        function()
-            if AutoClaimHouses.IsEnabled() then
-                AutoClaimHouses.Stop()
-                HousesButton.Text = "AUTO CLAIM HOUSES: OFF"
-                SetStatus("AUTO CLAIM HOUSES STOPPED")
-                LogAction("Auto Claim Houses Stopped")
-            else
-                AutoClaimHouses.SetSpeed(HouseSpeed)
-                local ok = AutoClaimHouses.Start()
-                if ok then
-                    HousesButton.Text = "AUTO CLAIM HOUSES: ON"
-                    SetStatus("AUTO CLAIM HOUSES RUNNING")
-                    LogAction("Auto Claim Houses Started", {
-                        Speed = HouseSpeed
-                    })
-                else
-                    HousesButton.Text = "AUTO CLAIM HOUSES: OFF"
-                    SetStatus("AUTO CLAIM HOUSES ERROR")
-                end
-            end
-        end,
-        Color3.fromRGB(45, 115, 75)
-    )
+        HouseButton = MakeButton(
+            ScytheFolder,
+            "AUTO CLAIM HOUSE " .. HouseId .. ": OFF",
+            function()
+                local NewState = not AutoClaimHouses.IsHouseEnabled(HouseId)
+
+                AutoClaimHouses.SetHouseEnabled(HouseId, NewState)
+
+                HouseButton.Text = "AUTO CLAIM HOUSE " .. HouseId
+                    .. (NewState and ": ON" or ": OFF")
+
+                SetStatus(
+                    "HOUSE " .. HouseId
+                    .. (NewState and " ENABLED" or " DISABLED")
+                )
+
+                LogAction("House Toggle Changed", {
+                    House = HouseId,
+                    Enabled = NewState
+                })
+            end,
+            Color3.fromRGB(45, 115, 75)
+        )
+
+        HouseButtons[HouseId] = HouseButton
+    end
 
     -- REMOTE LOGGER PAGE
     Label(LoggerPage, "REMOTE LOGGER", 17, 30).Font = Enum.Font.GothamBold
@@ -933,4 +926,3 @@ function GUI.Create(Config, Controller, Scythe, AutoClaimHouses, Logger)
 end
 
 return GUI
-    
