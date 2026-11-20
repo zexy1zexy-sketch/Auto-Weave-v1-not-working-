@@ -2,6 +2,7 @@
 local Players = game:GetService("Players")
 local UIS = game:GetService("UserInputService")
 local GuiService = game:GetService("GuiService")
+local TweenService = game:GetService("TweenService")
 
 local GUI = {}
 
@@ -29,6 +30,39 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     local ButtonDark = Color3.fromRGB(31, 31, 42)
     local White = Color3.fromRGB(240, 240, 248)
     local Grey = Color3.fromRGB(155, 155, 175)
+    local PurpleLight = Color3.fromRGB(185, 135, 255)
+    local Border = Color3.fromRGB(54, 48, 70)
+
+    local FastTween = TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+    local function Tween(obj, properties, info)
+        if obj and obj.Parent then
+            TweenService:Create(obj, info or FastTween, properties):Play()
+        end
+    end
+
+    local function AddGradient(obj, topColor, bottomColor, rotation)
+        local gradient = Instance.new("UIGradient")
+        gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, topColor),
+            ColorSequenceKeypoint.new(1, bottomColor)
+        })
+        gradient.Rotation = rotation or 90
+        gradient.Parent = obj
+        return gradient
+    end
+
+    local function AddHover(button, normalColor, hoverColor)
+        button.AutoButtonColor = false
+
+        button.MouseEnter:Connect(function()
+            Tween(button, {BackgroundColor3 = hoverColor})
+        end)
+
+        button.MouseLeave:Connect(function()
+            Tween(button, {BackgroundColor3 = normalColor})
+        end)
+    end
 
     local function Corner(obj, radius)
         local c = Instance.new("UICorner")
@@ -40,7 +74,9 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         local s = Instance.new("UIStroke")
         s.Color = color or Purple
         s.Thickness = thickness or 1
+        s.Transparency = 0.18
         s.Parent = obj
+        return s
     end
 
     local function Label(parent, text, size, height, color)
@@ -56,25 +92,50 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         return item
     end
 
+    -- MAIN WINDOW
+
     local Frame = Instance.new("Frame")
     Frame.Size = UDim2.fromOffset(WindowWidth, WindowHeight)
     Frame.Position = UDim2.new(0.5, -WindowWidth / 2, 0.5, -WindowHeight / 2)
     Frame.BackgroundColor3 = Dark
     Frame.BorderSizePixel = 0
     Frame.Parent = ScreenGui
-    Corner(Frame, 12)
-    Stroke(Frame, Purple, 1.3)
+    Corner(Frame, 14)
+    AddGradient(Frame, Color3.fromRGB(19, 18, 27), Dark, 90)
+    Stroke(Frame, Color3.fromRGB(105, 76, 150), 1.25)
+
+    local AccentLine = Instance.new("Frame")
+    AccentLine.Name = "AccentLine"
+    AccentLine.Size = UDim2.new(1, -28, 0, 2)
+    AccentLine.Position = UDim2.fromOffset(14, 48)
+    AccentLine.BackgroundColor3 = Purple
+    AccentLine.BorderSizePixel = 0
+    AccentLine.ZIndex = 3
+    AccentLine.Parent = Frame
+    AddGradient(AccentLine, PurpleLight, Purple, 0)
+    Corner(AccentLine, 2)
+
+    -- HEADER
 
     local Header = Instance.new("Frame")
     Header.Size = UDim2.new(1, 0, 0, 48)
     Header.BackgroundColor3 = Dark
     Header.BorderSizePixel = 0
     Header.Parent = Frame
-    Corner(Header, 10)
+    Corner(Header, 12)
+    AddGradient(Header, Color3.fromRGB(31, 25, 43), Dark, 90)
 
     local HeaderTitle = Label(Header, "  SHORTNAME HUB", 15, 48)
     HeaderTitle.Font = Enum.Font.GothamBold
-    HeaderTitle.Size = UDim2.new(1, -110, 1, 0)
+    HeaderTitle.Size = UDim2.new(1, -110, 0, 25)
+    HeaderTitle.Position = UDim2.fromOffset(2, 5)
+    HeaderTitle.TextSize = 15
+
+    local HeaderSubtitle = Label(Header, "CONTROL CENTER  •  PREMIUM BUILD", 8, 14, Grey)
+    HeaderSubtitle.Position = UDim2.fromOffset(15, 27)
+    HeaderSubtitle.Size = UDim2.new(1, -130, 0, 13)
+    HeaderSubtitle.Font = Enum.Font.GothamMedium
+    HeaderSubtitle.TextTransparency = 0.12
 
     local MinButton = Instance.new("TextButton")
     MinButton.Size = UDim2.fromOffset(38, 34)
@@ -87,7 +148,8 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     MinButton.Parent = Frame
     MinButton.ZIndex = 5
     Corner(MinButton, 8)
-    Stroke(MinButton, Purple, 1)
+    Stroke(MinButton, Border, 1)
+    AddHover(MinButton, ButtonDark, Color3.fromRGB(55, 48, 69))
 
     local ExitButton = Instance.new("TextButton")
     ExitButton.Size = UDim2.fromOffset(38, 34)
@@ -99,16 +161,22 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     ExitButton.Font = Enum.Font.Gotham
     ExitButton.Parent = Header
     Corner(ExitButton, 8)
-    Stroke(ExitButton, Purple, 1)
+    Stroke(ExitButton, Border, 1)
+    AddHover(ExitButton, ButtonDark, Color3.fromRGB(95, 43, 55))
+
+    -- SIDEBAR
 
     local SidebarWidth = math.min(155, WindowWidth * 0.34)
+
     local Sidebar = Instance.new("Frame")
     Sidebar.Position = UDim2.fromOffset(10, 58)
     Sidebar.Size = UDim2.new(0, SidebarWidth, 1, -68)
     Sidebar.BackgroundColor3 = Panel
     Sidebar.BorderSizePixel = 0
     Sidebar.Parent = Frame
-    Corner(Sidebar, 9)
+    Corner(Sidebar, 11)
+    AddGradient(Sidebar, Color3.fromRGB(27, 26, 37), Panel, 90)
+    Stroke(Sidebar, Border, 1)
 
     local SideLayout = Instance.new("UIListLayout")
     SideLayout.Padding = UDim.new(0, 7)
@@ -132,8 +200,8 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         b.TextSize = WindowWidth < 380 and 11 or 13
         b.Font = Enum.Font.GothamBold
         b.Parent = Sidebar
-        Corner(b, 7)
-        Stroke(b, Purple, 1)
+        Corner(b, 8)
+        Stroke(b, Border, 1)
         return b
     end
 
@@ -142,13 +210,17 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     local LoggerNav = MakeNav("◉  Remote Logger", 3)
     local SoonNav = MakeNav("＋  Coming Soon", 4)
 
+    -- CONTENT AREA
+
     local Content = Instance.new("Frame")
     Content.Position = UDim2.new(0, SidebarWidth + 20, 0, 58)
     Content.Size = UDim2.new(1, -SidebarWidth - 30, 1, -68)
     Content.BackgroundColor3 = Panel
     Content.BorderSizePixel = 0
     Content.Parent = Frame
-    Corner(Content, 9)
+    Corner(Content, 11)
+    AddGradient(Content, Color3.fromRGB(27, 26, 37), Panel, 90)
+    Stroke(Content, Border, 1)
 
     local function MakePage(name)
         local page = Instance.new("ScrollingFrame")
@@ -157,7 +229,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         page.Position = UDim2.fromOffset(8, 8)
         page.BackgroundTransparency = 1
         page.BorderSizePixel = 0
-        page.ScrollBarThickness = 4
+        page.ScrollBarThickness = 3
         page.ScrollBarImageColor3 = Purple
         page.CanvasSize = UDim2.fromOffset(0, 0)
         page.Visible = false
@@ -190,22 +262,55 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         LoggerPage.Visible = page == "Logger"
         SoonPage.Visible = page == "Soon"
 
-        SettingsNav.BackgroundColor3 = page == "Settings" and Color3.fromRGB(48, 37, 67) or ButtonDark
-        GameNav.BackgroundColor3 = page == "Game" and Color3.fromRGB(48, 37, 67) or ButtonDark
-        LoggerNav.BackgroundColor3 = page == "Logger" and Color3.fromRGB(48, 37, 67) or ButtonDark
-        SoonNav.BackgroundColor3 = page == "Soon" and Color3.fromRGB(48, 37, 67) or ButtonDark
+        local activeColor = Color3.fromRGB(55, 42, 77)
+
+        local function StyleNav(button, active)
+            Tween(button, {
+                BackgroundColor3 = active and activeColor or ButtonDark
+            })
+
+            local outline = button:FindFirstChildOfClass("UIStroke")
+
+            if outline then
+                Tween(outline, {
+                    Color = active and PurpleLight or Border,
+                    Transparency = active and 0 or 0.18,
+                    Thickness = active and 1.35 or 1
+                })
+            end
+
+            button.TextColor3 = active and Color3.fromRGB(255, 255, 255) or Grey
+        end
+
+        StyleNav(SettingsNav, page == "Settings")
+        StyleNav(GameNav, page == "Game")
+        StyleNav(LoggerNav, page == "Logger")
+        StyleNav(SoonNav, page == "Soon")
     end
 
-    SettingsNav.Activated:Connect(function() SelectPage("Settings") end)
-    GameNav.Activated:Connect(function() SelectPage("Game") end)
-    LoggerNav.Activated:Connect(function() SelectPage("Logger") end)
-    SoonNav.Activated:Connect(function() SelectPage("Soon") end)
+    SettingsNav.Activated:Connect(function()
+        SelectPage("Settings")
+    end)
+
+    GameNav.Activated:Connect(function()
+        SelectPage("Game")
+    end)
+
+    LoggerNav.Activated:Connect(function()
+        SelectPage("Logger")
+    end)
+
+    SoonNav.Activated:Connect(function()
+        SelectPage("Soon")
+    end)
 
     -- SETTINGS
+
     Label(SettingsPage, "SETTINGS", 17, 30).Font = Enum.Font.GothamBold
     Label(SettingsPage, "General hub settings", 12, 23, Grey)
 
     local PausedDisabled = true
+
     pcall(function()
         GuiService:SetGameplayPausedNotificationEnabled(false)
     end)
@@ -217,8 +322,9 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     PauseButton.TextSize = 12
     PauseButton.Font = Enum.Font.GothamBold
     PauseButton.Parent = SettingsPage
-    Corner(PauseButton, 7)
-    Stroke(PauseButton, Purple, 1)
+    Corner(PauseButton, 9)
+    Stroke(PauseButton, Border, 1)
+    AddHover(PauseButton, ButtonDark, Color3.fromRGB(48, 40, 63))
 
     local function UpdatePauseButton()
         PauseButton.Text = "Gameplay Paused Notification: " ..
@@ -229,10 +335,13 @@ function GUI.Create(Config, Controller, Scythe, Logger)
 
     PauseButton.Activated:Connect(function()
         PausedDisabled = not PausedDisabled
+
         local ok, err = pcall(function()
             GuiService:SetGameplayPausedNotificationEnabled(not PausedDisabled)
         end)
+
         UpdatePauseButton()
+
         if not ok then
             Label(SettingsPage, "Could not change setting: " .. tostring(err), 10, 35, Color3.fromRGB(255, 130, 130))
         end
@@ -241,6 +350,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     Label(SettingsPage, "When OFF, Roblox's gameplay-paused notification is disabled.", 11, 42, Grey)
 
     -- NOOB INCREMENTAL
+
     Label(GamePage, "NOOB INCREMENTAL", 17, 30).Font = Enum.Font.GothamBold
     Label(GamePage, "Tap a folder to show or hide its features.", 12, 22, Grey)
 
@@ -259,6 +369,8 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         end
     end
 
+    -- FOLDER SYSTEM
+
     local function MakeFolder(name)
         local Folder = Instance.new("Frame")
         Folder.Name = name:gsub("%W", "") .. "Folder"
@@ -267,8 +379,9 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         Folder.BorderSizePixel = 0
         Folder.ClipsDescendants = true
         Folder.Parent = GamePage
-        Corner(Folder, 8)
-        Stroke(Folder, Purple, 1)
+        Corner(Folder, 10)
+        Stroke(Folder, Border, 1)
+        AddGradient(Folder, Color3.fromRGB(34, 32, 46), ButtonDark, 90)
 
         local HeaderButton = Instance.new("TextButton")
         HeaderButton.Size = UDim2.new(1, 0, 0, 38)
@@ -278,6 +391,8 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         HeaderButton.TextSize = 12
         HeaderButton.Font = Enum.Font.GothamBold
         HeaderButton.TextXAlignment = Enum.TextXAlignment.Left
+        HeaderButton.AutoButtonColor = false
+        HeaderButton.TextColor3 = Color3.fromRGB(235, 228, 250)
         HeaderButton.Parent = Folder
 
         local FolderContent = Instance.new("Frame")
@@ -300,7 +415,9 @@ function GUI.Create(Config, Controller, Scythe, Logger)
 
         local function UpdateSize()
             local contentHeight = FolderLayout.AbsoluteContentSize.Y + 8
+
             FolderContent.Size = UDim2.new(1, -16, 0, contentHeight)
+
             Folder.Size = UDim2.new(
                 1, 0, 0,
                 Open and (43 + contentHeight) or 38
@@ -310,8 +427,10 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         HeaderButton.Activated:Connect(function()
             Open = not Open
             FolderContent.Visible = Open
+
             HeaderButton.Text = (Open and "📂  " or "📁  ")
                 .. name .. (Open and "     -" or "     +")
+
             UpdateSize()
         end)
 
@@ -323,6 +442,8 @@ function GUI.Create(Config, Controller, Scythe, Logger)
 
         return FolderContent
     end
+
+    -- INPUT BOXES
 
     local function MakeBox(parent, label, value, callback)
         Label(parent, label, 11, 20, Grey)
@@ -337,8 +458,9 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         box.Font = Enum.Font.Gotham
         box.ClearTextOnFocus = false
         box.Parent = parent
-        Corner(box, 6)
-        Stroke(box, Color3.fromRGB(65, 65, 85), 1)
+        Corner(box, 8)
+        Stroke(box, Border, 1)
+        box.TextXAlignment = Enum.TextXAlignment.Left
 
         box.FocusLost:Connect(function()
             callback(box.Text)
@@ -346,6 +468,8 @@ function GUI.Create(Config, Controller, Scythe, Logger)
 
         return box
     end
+
+    -- BUTTONS
 
     local function MakeButton(parent, text, callback, color)
         local b = Instance.new("TextButton")
@@ -356,13 +480,21 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         b.TextSize = 12
         b.Font = Enum.Font.GothamBold
         b.Parent = parent
-        Corner(b, 7)
-        Stroke(b, Purple, 1)
+        Corner(b, 8)
+        Stroke(b, Border, 1)
+
+        AddHover(
+            b,
+            color or Color3.fromRGB(75, 55, 115),
+            Color3.fromRGB(94, 68, 137)
+        )
+
         b.Activated:Connect(callback)
         return b
     end
 
     -- NPC & TELEPORT FOLDER
+
     local TeleportFolder = MakeFolder("NPC & TELEPORT")
 
     MakeBox(TeleportFolder, "NPC NAME", Config.TargetName, function(value)
@@ -390,21 +522,22 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         LogAction("Manual Teleport", {
             Target = Config.TargetName
         })
+
         Controller.TeleportNow()
     end)
 
     local AutoButton
+
     AutoButton = MakeButton(TeleportFolder, "AUTO TP: OFF", function()
         if Controller.IsEnabled() then
             Controller.Stop()
             AutoButton.Text = "AUTO TP: OFF"
 
-
-
             LogAction("Auto TP Stopped")
         else
             Controller.Start()
             AutoButton.Text = "AUTO TP: ON"
+
             LogAction("Auto TP Started", {
                 Target = Config.TargetName,
                 Speed = Config.TeleportsPerSecond
@@ -413,13 +546,16 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     end, Color3.fromRGB(45, 115, 75))
 
     -- REMOTES FOLDER
+
     local ScytheFolder = MakeFolder("REMOTES")
 
     Config.ScytheSpeed = math.clamp(tonumber(Config.ScytheSpeed) or 1, 1, 100)
 
     MakeBox(ScytheFolder, "SCYTHE ROLL SPEED (1-100 CPS)", Config.ScytheSpeed, function(value)
         Config.ScytheSpeed = math.clamp(tonumber(value) or 1, 1, 100)
+
         Scythe.SetSpeed(Config.ScytheSpeed)
+
         LogAction("Scythe Speed Changed", {
             Speed = Config.ScytheSpeed
         })
@@ -428,6 +564,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     Scythe.SetSpeed(Config.ScytheSpeed)
 
     local ScytheButton
+
     ScytheButton = MakeButton(ScytheFolder, "SCYTHE ENCHANT AUTO ROLL: OFF", function()
         if Scythe.IsEnabled() then
             Scythe.Stop()
@@ -436,15 +573,18 @@ function GUI.Create(Config, Controller, Scythe, Logger)
             LogAction("Scythe Auto Roll Stopped")
         else
             local ok, message = Scythe.Start()
+
             if ok then
                 ScytheButton.Text = "SCYTHE ENCHANT AUTO ROLL: ON"
                 SetStatus("SCYTHE ROLL RUNNING")
+
                 LogAction("Scythe Auto Roll Started", {
                     Speed = Config.ScytheSpeed
                 })
             else
                 ScytheButton.Text = "SCYTHE ENCHANT AUTO ROLL: OFF"
                 SetStatus(message or "SCYTHE ERROR")
+
                 LogAction("Scythe Auto Roll Failed", {
                     Reason = tostring(message)
                 })
@@ -453,6 +593,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     end, Color3.fromRGB(100, 65, 160))
 
     -- REMOTE LOGGER PAGE
+
     Label(LoggerPage, "REMOTE LOGGER", 17, 30).Font = Enum.Font.GothamBold
     Label(LoggerPage, "LOCAL TEST MODE - no game remotes captured", 10, 22, Grey)
 
@@ -473,6 +614,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     Stroke(SearchBox, Purple, 1)
 
     local SelectedCategory = "All"
+
     local CategoryFrame = Instance.new("Frame")
     CategoryFrame.Size = UDim2.new(1, 0, 0, 32)
     CategoryFrame.BackgroundTransparency = 1
@@ -511,7 +653,6 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         LogContainer.CanvasSize = UDim2.fromOffset(0, LogLayout.AbsoluteContentSize.Y + 15)
     end)
 
-
     local LastRenderKey = nil
     local DisplayLimit = 30
 
@@ -522,6 +663,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         end
 
         local version = Logger:GetVersion()
+
         local renderKey = tostring(version) .. "|"
             .. SelectedCategory .. "|" .. SearchBox.Text
 
@@ -559,6 +701,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
                 35,
                 Grey
             )
+
             Empty.TextXAlignment = Enum.TextXAlignment.Center
             return
         end
@@ -573,9 +716,8 @@ function GUI.Create(Config, Controller, Scythe, Logger)
             Card.BackgroundColor3 = Panel
             Card.BorderSizePixel = 0
             Card.Parent = LogContainer
-            Corner(Card, 6)
-
-            Stroke(Card, Color3.fromRGB(60, 50, 80), 1)
+            Corner(Card, 8)
+            Stroke(Card, Border, 1)
 
             local Name = Label(
                 Card,
@@ -584,6 +726,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
                 24,
                 White
             )
+
             Name.Position = UDim2.fromOffset(7, 2)
             Name.Size = UDim2.new(1, -14, 0, 22)
             Name.Font = Enum.Font.GothamBold
@@ -599,18 +742,22 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     end
 
     -- LOGGER CATEGORY BUTTONS
+
     for _, category in ipairs(Categories) do
         local button = Instance.new("TextButton")
         button.Size = UDim2.new(0.25, -4, 1, 0)
         button.BackgroundColor3 = ButtonDark
         button.TextColor3 = White
+
         button.Text = category == "FireServer" and "Fire"
             or category == "InvokeServer" and "Invoke"
             or category
+
         button.TextSize = 9
         button.Font = Enum.Font.GothamBold
         button.Parent = CategoryFrame
-        Corner(button, 5)
+        Corner(button, 7)
+        Stroke(button, Border, 1)
 
         CategoryButtons[category] = button
 
@@ -622,11 +769,16 @@ function GUI.Create(Config, Controller, Scythe, Logger)
                     name == SelectedCategory
                     and Color3.fromRGB(75, 50, 115)
                     or ButtonDark
+
+                local outline = categoryButton:FindFirstChildOfClass("UIStroke")
+
+                if outline then
+                    outline.Color = name == SelectedCategory and PurpleLight or Border
+                end
             end
 
             RefreshLogs()
         end)
-
     end
 
     CategoryButtons.All.BackgroundColor3 = Color3.fromRGB(75, 50, 115)
@@ -634,6 +786,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     SearchBox:GetPropertyChangedSignal("Text"):Connect(RefreshLogs)
 
     -- AUTOMATIC LOGGER REFRESH
+
     task.spawn(function()
         while ScreenGui.Parent do
             task.wait(1)
@@ -645,6 +798,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     end)
 
     -- LOGGER CONTROLS
+
     local LoggerControls = Instance.new("Frame")
     LoggerControls.Size = UDim2.new(1, 0, 0, 38)
     LoggerControls.BackgroundTransparency = 1
@@ -664,13 +818,17 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         button.TextSize = 10
         button.Font = Enum.Font.GothamBold
         button.Parent = LoggerControls
-        Corner(button, 6)
-        Stroke(button, Purple, 1)
+        Corner(button, 7)
+        Stroke(button, Border, 1)
+
+        AddHover(button, ButtonDark, Color3.fromRGB(48, 40, 63))
+
         button.Activated:Connect(callback)
         return button
     end
 
     MakeLoggerButton("REFRESH", RefreshLogs)
+
     MakeLoggerButton("TEST", function()
         if not Logger then
             return
@@ -692,22 +850,26 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         if Logger then
             Logger:Clear()
         end
+
         RefreshLogs()
     end)
 
     local PauseButtonLogger
+
     PauseButtonLogger = MakeLoggerButton("PAUSE: OFF", function()
         if not Logger then
             return
         end
 
         Logger:SetEnabled(not Logger.Enabled)
+
         PauseButtonLogger.Text = Logger.Enabled
             and "PAUSE: OFF"
             or "PAUSE: ON"
     end)
 
     local CopyLogsButton
+
     CopyLogsButton = MakeLoggerButton("COPY LOGS", function()
         if not Logger then
             return
@@ -740,6 +902,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     RefreshLogs()
 
     -- COMING SOON PAGE
+
     Label(SoonPage, "COMING SOON", 17, 30).Font = Enum.Font.GothamBold
     Label(SoonPage, "More features are being worked on.", 12, 25, Grey)
 
@@ -748,14 +911,15 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     SoonCard.BackgroundColor3 = ButtonDark
     SoonCard.BorderSizePixel = 0
     SoonCard.Parent = SoonPage
-    Corner(SoonCard, 8)
-    Stroke(SoonCard, Purple, 1)
+    Corner(SoonCard, 10)
+    Stroke(SoonCard, Border, 1)
+    AddGradient(SoonCard, Color3.fromRGB(36, 31, 49), ButtonDark, 90)
 
     local SoonText = Label(SoonCard, "Stay tuned for future updates!", 12, 75, White)
     SoonText.TextXAlignment = Enum.TextXAlignment.Center
-    
+
     -- MINIMIZE BUBBLE
-    
+
     local Bubble = Instance.new("TextButton")
     Bubble.Name = "ShortNameBubble"
     Bubble.Size = UDim2.fromOffset(55, 55)
@@ -768,7 +932,9 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     Bubble.Visible = false
     Bubble.Parent = ScreenGui
     Corner(Bubble, 50)
-    Stroke(Bubble, Purple, 2)
+    AddGradient(Bubble, Color3.fromRGB(42, 31, 62), Dark, 90)
+    Stroke(Bubble, PurpleLight, 2)
+    AddHover(Bubble, Dark, Color3.fromRGB(43, 33, 61))
 
     local Minimized = false
 
@@ -785,6 +951,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     end)
 
     -- WINDOW DRAGGING
+
     local Dragging = false
     local DragInput
     local DragStart
@@ -793,6 +960,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     Header.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
+
             Dragging = true
             DragStart = input.Position
             StartPosition = Frame.Position
@@ -815,6 +983,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     UIS.InputChanged:Connect(function(input)
         if input == DragInput and Dragging then
             local delta = input.Position - DragStart
+
             Frame.Position = UDim2.new(
                 StartPosition.X.Scale,
                 StartPosition.X.Offset + delta.X,
@@ -825,6 +994,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     end)
 
     -- BUBBLE DRAGGING
+
     local BubbleDragging = false
     local BubbleInput
     local BubbleStart
@@ -833,6 +1003,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     Bubble.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1
         or input.UserInputType == Enum.UserInputType.Touch then
+
             BubbleDragging = true
             BubbleInput = input
             BubbleStart = input.Position
@@ -856,6 +1027,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     UIS.InputChanged:Connect(function(input)
         if input == BubbleInput and BubbleDragging then
             local delta = input.Position - BubbleStart
+
             Bubble.Position = UDim2.new(
                 BubblePosition.X.Scale,
                 BubblePosition.X.Offset + delta.X,
@@ -866,6 +1038,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     end)
 
     -- EXIT
+
     ExitButton.Activated:Connect(function()
         pcall(function()
             Controller.Stop()
