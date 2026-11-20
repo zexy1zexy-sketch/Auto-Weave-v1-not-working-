@@ -251,6 +251,14 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         Status.Text = "STATUS: " .. tostring(text)
     end
 
+    local function LogAction(name, details)
+        if Logger and type(Logger.RecordAction) == "function" then
+            pcall(function()
+                Logger:RecordAction(name, details or {})
+            end)
+        end
+    end
+
     local function MakeFolder(name)
         local Folder = Instance.new("Frame")
         Folder.Name = name:gsub("%W", "") .. "Folder"
@@ -379,6 +387,9 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     end)
 
     MakeButton(TeleportFolder, "TELEPORT NOW", function()
+        LogAction("Manual Teleport", {
+            Target = Config.TargetName
+        })
         Controller.TeleportNow()
     end)
 
@@ -387,9 +398,14 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         if Controller.IsEnabled() then
             Controller.Stop()
             AutoButton.Text = "AUTO TP: OFF"
+            LogAction("Auto TP Stopped")
         else
             Controller.Start()
             AutoButton.Text = "AUTO TP: ON"
+            LogAction("Auto TP Started", {
+                Target = Config.TargetName,
+                Speed = Config.TeleportsPerSecond
+            })
         end
     end, Color3.fromRGB(45, 115, 75))
 
@@ -401,6 +417,9 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     MakeBox(ScytheFolder, "SCYTHE ROLL SPEED (1-100 CPS)", Config.ScytheSpeed, function(value)
         Config.ScytheSpeed = math.clamp(tonumber(value) or 1, 1, 100)
         Scythe.SetSpeed(Config.ScytheSpeed)
+        LogAction("Scythe Speed Changed", {
+            Speed = Config.ScytheSpeed
+        })
     end)
 
     Scythe.SetSpeed(Config.ScytheSpeed)
@@ -411,14 +430,21 @@ function GUI.Create(Config, Controller, Scythe, Logger)
             Scythe.Stop()
             ScytheButton.Text = "SCYTHE ENCHANT AUTO ROLL: OFF"
             SetStatus("SCYTHE ROLL STOPPED")
+            LogAction("Scythe Auto Roll Stopped")
         else
             local ok, message = Scythe.Start()
             if ok then
                 ScytheButton.Text = "SCYTHE ENCHANT AUTO ROLL: ON"
                 SetStatus("SCYTHE ROLL RUNNING")
+                LogAction("Scythe Auto Roll Started", {
+                    Speed = Config.ScytheSpeed
+                })
             else
                 ScytheButton.Text = "SCYTHE ENCHANT AUTO ROLL: OFF"
                 SetStatus(message or "SCYTHE ERROR")
+                LogAction("Scythe Auto Roll Failed", {
+                    Reason = tostring(message)
+                })
             end
         end
     end, Color3.fromRGB(100, 65, 160))
