@@ -55,6 +55,33 @@ local function Serialize(value, depth, budget)
     return result
 end
 
+local function StoreEntry(name, path, method, args, category)
+    local entry = {
+        Name = name,
+        Path = path,
+        Method = method,
+        Category = category,
+        Arguments = Serialize(args or {}),
+        Timestamp = os.date("%H:%M:%S")
+    }
+
+    local index
+
+    if Count < Logger.MaxLogs then
+        index = ((Head + Count - 1) % Logger.MaxLogs) + 1
+        Count = Count + 1
+    else
+        index = Head
+        Head = (Head % Logger.MaxLogs) + 1
+    end
+
+    Buffer[index] = entry
+    Version = Version + 1
+
+    return entry
+end
+
+-- Records an explicitly supplied game object.
 function Logger:Record(remote, method, args)
     if not self.Enabled then
         return
@@ -68,29 +95,28 @@ function Logger:Record(remote, method, args)
         category = "InvokeServer"
     end
 
-    local entry = {
-        Name = remote.Name,
-        Path = remote:GetFullName(),
-        Method = method,
-        Category = category,
-        Arguments = Serialize(args or {}),
-        Timestamp = os.date("%H:%M:%S")
-    }
+    return StoreEntry(
+        remote.Name,
+        remote:GetFullName(),
+        method,
+        args,
+        category
+    )
+end
 
-    local index
-
-    if Count < self.MaxLogs then
-        index = ((Head + Count - 1) % self.MaxLogs) + 1
-        Count = Count + 1
-    else
-        index = Head
-        Head = (Head % self.MaxLogs) + 1
+-- Records an action performed by ShortName Hub itself.
+function Logger:RecordAction(actionName, details)
+    if not self.Enabled then
+        return
     end
 
-    Buffer[index] = entry
-    Version = Version + 1
-
-    return entry
+    return StoreEntry(
+        tostring(actionName),
+        "ShortName Hub/Actions",
+        "Action",
+        details or {},
+        "Other"
+    )
 end
 
 function Logger:GetLogs(category, search)
