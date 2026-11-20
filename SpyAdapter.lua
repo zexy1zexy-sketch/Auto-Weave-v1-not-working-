@@ -3,12 +3,11 @@
 
 local SpyAdapter = {}
 
-local Logger = nil
-local SimpleSpy = nil
+local Logger
+local SimpleSpy
 
 local Connections = {}
 local WatchedRemotes = {}
-
 local Enabled = false
 
 local function IsRemote(instance)
@@ -17,11 +16,7 @@ local function IsRemote(instance)
 end
 
 local function WatchRemote(remote)
-    if not Enabled then
-        return
-    end
-
-    if not IsRemote(remote) then
+    if not Enabled or not IsRemote(remote) then
         return
     end
 
@@ -29,42 +24,34 @@ local function WatchRemote(remote)
         return
     end
 
-    WatchedRemotes[remote] = true
-
-    local Method
-
-    if remote:IsA("RemoteEvent") then
-        Method = "FireServer"
-    else
-        Method = "InvokeServer"
-    end
+    local method = remote:IsA("RemoteEvent")
+        and "FireServer"
+        or "InvokeServer"
 
     local success, signal = pcall(function()
         return SimpleSpy:GetRemoteFiredSignal(remote)
     end)
 
     if not success or not signal then
-        warn("ShortName Hub: Could not watch " .. remote.Name)
         return
     end
 
     local connected, connection = pcall(function()
-        return signal:Connect(function(args)
+        return signal:Connect(function(...)
             if not Enabled or not Logger then
                 return
             end
 
+            local args = {...}
+
             pcall(function()
-                Logger:Record(
-                    remote,
-                    Method,
-                    args
-                )
+                Logger:Record(remote, method, args)
             end)
         end)
     end)
 
     if connected and connection then
+        WatchedRemotes[remote] = true
         table.insert(Connections, connection)
     end
 end
@@ -81,7 +68,6 @@ function SpyAdapter.Start(LoggerModule)
     end
 
     local Env = getgenv and getgenv() or _G
-
     SimpleSpy = Env.SimpleSpy
 
     if not SimpleSpy
@@ -93,17 +79,12 @@ function SpyAdapter.Start(LoggerModule)
     Logger = LoggerModule
     Enabled = true
 
-    -- Watch remotes that already exist
     for _, instance in ipairs(game:GetDescendants()) do
         WatchRemote(instance)
     end
 
-    -- Watch remotes added later
-    local connection = game.DescendantAdded:Connect(
-        WatchRemote
-    )
-
-    table.insert(Connections, connection)
+    local addedConnection = game.DescendantAdded:Connect(WatchRemote)
+    table.insert(Connections, addedConnection)
 
     print("ShortName Hub: SpyAdapter started!")
 
