@@ -37,15 +37,17 @@ local function WatchRemote(remote)
     end
 
     local connected, connection = pcall(function()
-        return signal:Connect(function(...)
+        return signal:Connect(function(args)
             if not Enabled or not Logger then
                 return
             end
 
-            local args = {...}
-
             pcall(function()
-                Logger:Record(remote, method, args)
+                Logger:Record(
+                    remote,
+                    method,
+                    args
+                )
             end)
         end)
     end)
