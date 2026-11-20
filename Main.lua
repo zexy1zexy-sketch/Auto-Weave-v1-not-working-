@@ -40,6 +40,7 @@ local Teleport = LoadModule("Teleport.lua")
 local GUI = LoadModule("GUI.lua")
 local ScytheModule = LoadModule("Scythe.lua")
 local Logger = LoadModule("Logger.lua")
+local SpyAdapter = LoadModule("SpyAdapter.lua")
 
 -- Create controllers
 local Controller
@@ -54,7 +55,16 @@ end)
 
 Scythe = ScytheModule.new()
 
--- Create interface with Logger
+-- Connect SimpleSpy to Remote Logger
+local SpyStarted = SpyAdapter.Start(Logger)
+
+if SpyStarted then
+    print("ShortName Hub: Remote Logger connected to SimpleSpy!")
+else
+    warn("ShortName Hub: SimpleSpy not detected. Start SimpleSpy first.")
+end
+
+-- Create interface
 Interface = GUI.Create(
     Config,
     Controller,
