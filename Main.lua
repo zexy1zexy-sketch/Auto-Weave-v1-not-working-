@@ -26,14 +26,24 @@ pcall(function()
     game:GetService("GuiService"):SetGameplayPausedNotificationEnabled(false)
 end)
 
--- Key system
+-- ANIMATED LOADING SCREEN
+local LoadingSuccess, LoadingResult = pcall(function()
+    local LoadingScreen = LoadModule("LoadingScreen.lua")
+    LoadingScreen.Start()
+end)
+
+if not LoadingSuccess then
+    warn("ShortName Hub loading screen error: " .. tostring(LoadingResult))
+end
+
+-- KEY SYSTEM
 local KeySystem = LoadModule("KeySystem.lua")
 
 if not KeySystem.Start() then
     return
 end
 
--- Load modules
+-- LOAD MODULES
 local Config = LoadModule("Config.lua")
 local NPC = LoadModule("NPC.lua")
 local Teleport = LoadModule("Teleport.lua")
@@ -42,7 +52,7 @@ local ScytheModule = LoadModule("Scythe.lua")
 local Logger = LoadModule("Logger.lua")
 local SpyAdapter = LoadModule("SpyAdapter.lua")
 
--- Create controllers
+-- CREATE CONTROLLERS
 local Controller
 local Scythe
 local Interface
@@ -59,7 +69,7 @@ Scythe = ScytheModule.new()
 local SpyStarted = false
 warn("ShortName Hub: Remote Spy temporarily disabled.")
 
--- Create interface
+-- CREATE INTERFACE
 local Success, Result = pcall(function()
     return GUI.Create(
         Config,
