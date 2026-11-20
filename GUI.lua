@@ -34,7 +34,6 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         local c = Instance.new("UICorner")
         c.CornerRadius = UDim.new(0, radius or 8)
         c.Parent = obj
-        return c
     end
 
     local function Stroke(obj, color, thickness)
@@ -42,7 +41,6 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         s.Color = color or Purple
         s.Thickness = thickness or 1
         s.Parent = obj
-        return s
     end
 
     local function Label(parent, text, size, height, color)
@@ -244,7 +242,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
 
     -- NOOB INCREMENTAL
     Label(GamePage, "NOOB INCREMENTAL", 17, 30).Font = Enum.Font.GothamBold
-    Label(GamePage, "NPC and teleport controls", 12, 22, Grey)
+    Label(GamePage, "Tap a folder to show or hide its features.", 12, 22, Grey)
 
     local Status = Label(GamePage, "STATUS: READY", 12, 28, Color3.fromRGB(170, 210, 255))
     Status.Font = Enum.Font.GothamBold
@@ -253,8 +251,74 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         Status.Text = "STATUS: " .. tostring(text)
     end
 
-    local function MakeBox(label, value, callback)
-        Label(GamePage, label, 11, 20, Grey)
+    local function MakeFolder(name)
+        local Folder = Instance.new("Frame")
+        Folder.Name = name:gsub("%W", "") .. "Folder"
+        Folder.Size = UDim2.new(1, 0, 0, 38)
+        Folder.BackgroundColor3 = ButtonDark
+        Folder.BorderSizePixel = 0
+        Folder.ClipsDescendants = true
+        Folder.Parent = GamePage
+        Corner(Folder, 8)
+        Stroke(Folder, Purple, 1)
+
+        local HeaderButton = Instance.new("TextButton")
+        HeaderButton.Size = UDim2.new(1, 0, 0, 38)
+        HeaderButton.BackgroundTransparency = 1
+        HeaderButton.Text = "📁  " .. name .. "     +"
+        HeaderButton.TextColor3 = White
+        HeaderButton.TextSize = 12
+        HeaderButton.Font = Enum.Font.GothamBold
+        HeaderButton.TextXAlignment = Enum.TextXAlignment.Left
+        HeaderButton.Parent = Folder
+
+        local FolderContent = Instance.new("Frame")
+        FolderContent.Position = UDim2.fromOffset(8, 43)
+        FolderContent.Size = UDim2.new(1, -16, 0, 0)
+        FolderContent.BackgroundTransparency = 1
+        FolderContent.Visible = false
+        FolderContent.Parent = Folder
+
+        local FolderLayout = Instance.new("UIListLayout")
+        FolderLayout.Padding = UDim.new(0, 7)
+        FolderLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        FolderLayout.Parent = FolderContent
+
+        local FolderPadding = Instance.new("UIPadding")
+        FolderPadding.PaddingBottom = UDim.new(0, 8)
+        FolderPadding.Parent = FolderContent
+
+        local Open = false
+
+        local function UpdateSize()
+            local contentHeight = FolderLayout.AbsoluteContentSize.Y + 8
+            FolderContent.Size = UDim2.new(1, -16, 0, contentHeight)
+            Folder.Size = UDim2.new(
+                1, 0, 0,
+                Open and (43 + contentHeight) or 38
+            )
+        end
+
+        HeaderButton.Activated:Connect(function()
+            Open = not Open
+            FolderContent.Visible = Open
+            HeaderButton.Text = (Open and "📂  " or "📁  ")
+                .. name .. (Open and "     -" or "     +")
+            UpdateSize()
+        end)
+
+        FolderLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            if Open then
+                UpdateSize()
+            end
+        end)
+
+        return FolderContent
+    end
+
+    local function MakeBox(parent, label, value, callback)
+        Label(parent, label, 11, 20, Grey)
+
         local box = Instance.new("TextBox")
         box.Size = UDim2.new(1, 0, 0, 34)
         box.BackgroundColor3 = ButtonDark
@@ -264,12 +328,14 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         box.TextSize = 13
         box.Font = Enum.Font.Gotham
         box.ClearTextOnFocus = false
-        box.Parent = GamePage
+        box.Parent = parent
         Corner(box, 6)
         Stroke(box, Color3.fromRGB(65, 65, 85), 1)
+
         box.FocusLost:Connect(function()
             callback(box.Text)
         end)
+
         return box
     end
 
@@ -288,33 +354,36 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         return b
     end
 
-    MakeBox("NPC NAME", Config.TargetName, function(value)
+    -- NPC & TELEPORT FOLDER
+    local TeleportFolder = MakeFolder("NPC & TELEPORT")
+
+    MakeBox(TeleportFolder, "NPC NAME", Config.TargetName, function(value)
         Config.TargetName = value
         Controller.SetTargetName(value)
     end)
 
-    MakeBox("AIR INTERVAL (SECONDS)", Config.AirInterval, function(value)
+    MakeBox(TeleportFolder, "AIR INTERVAL (SECONDS)", Config.AirInterval, function(value)
         Config.AirInterval = math.clamp(tonumber(value) or 5, 1, 30)
     end)
 
-    MakeBox("AIR TIME (SECONDS)", Config.AirTime, function(value)
+    MakeBox(TeleportFolder, "AIR TIME (SECONDS)", Config.AirTime, function(value)
         Config.AirTime = math.clamp(tonumber(value) or 3, 1, 30)
     end)
 
-    MakeBox("TP HEIGHT (STUDS)", Config.AirHeight, function(value)
+    MakeBox(TeleportFolder, "TP HEIGHT (STUDS)", Config.AirHeight, function(value)
         Config.AirHeight = math.clamp(tonumber(value) or 100, 1, 1000)
     end)
 
-    MakeBox("TP SPEED", Config.TeleportsPerSecond, function(value)
+    MakeBox(TeleportFolder, "TP SPEED", Config.TeleportsPerSecond, function(value)
         Config.TeleportsPerSecond = math.clamp(tonumber(value) or 1, 0.1, 100)
     end)
 
-    MakeButton(GamePage, "TELEPORT NOW", function()
+    MakeButton(TeleportFolder, "TELEPORT NOW", function()
         Controller.TeleportNow()
     end)
 
     local AutoButton
-    AutoButton = MakeButton(GamePage, "AUTO TP: OFF", function()
+    AutoButton = MakeButton(TeleportFolder, "AUTO TP: OFF", function()
         if Controller.IsEnabled() then
             Controller.Stop()
             AutoButton.Text = "AUTO TP: OFF"
@@ -324,9 +393,12 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         end
     end, Color3.fromRGB(45, 115, 75))
 
+    -- SCYTHE FOLDER
+    local ScytheFolder = MakeFolder("SCYTHE")
+
     Config.ScytheSpeed = math.clamp(tonumber(Config.ScytheSpeed) or 1, 1, 100)
 
-    MakeBox("SCYTHE ROLL SPEED (1-100 CPS)", Config.ScytheSpeed, function(value)
+    MakeBox(ScytheFolder, "SCYTHE ROLL SPEED (1-100 CPS)", Config.ScytheSpeed, function(value)
         Config.ScytheSpeed = math.clamp(tonumber(value) or 1, 1, 100)
         Scythe.SetSpeed(Config.ScytheSpeed)
     end)
@@ -334,23 +406,24 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     Scythe.SetSpeed(Config.ScytheSpeed)
 
     local ScytheButton
-    ScytheButton = MakeButton(GamePage, "SYTHE ENCHANT AUTO ROLL: OFF", function()
+    ScytheButton = MakeButton(ScytheFolder, "SCYTHE ENCHANT AUTO ROLL: OFF", function()
         if Scythe.IsEnabled() then
             Scythe.Stop()
-            ScytheButton.Text = "SYTHE ENCHANT AUTO ROLL: OFF"
+            ScytheButton.Text = "SCYTHE ENCHANT AUTO ROLL: OFF"
             SetStatus("SCYTHE ROLL STOPPED")
         else
             local ok, message = Scythe.Start()
             if ok then
-                ScytheButton.Text = "SYTHE ENCHANT AUTO ROLL: ON"
+                ScytheButton.Text = "SCYTHE ENCHANT AUTO ROLL: ON"
                 SetStatus("SCYTHE ROLL RUNNING")
             else
-                ScytheButton.Text = "SYTHE ENCHANT AUTO ROLL: OFF"
+                ScytheButton.Text = "SCYTHE ENCHANT AUTO ROLL: OFF"
                 SetStatus(message or "SCYTHE ERROR")
             end
         end
     end, Color3.fromRGB(100, 65, 160))
 
+    
     -- REMOTE LOGGER PAGE
     Label(LoggerPage, "REMOTE LOGGER", 17, 30).Font = Enum.Font.GothamBold
     Label(LoggerPage, "Monitor captured remote activity", 11, 22, Grey)
@@ -461,15 +534,16 @@ function GUI.Create(Config, Controller, Scythe, Logger)
             Time.Position = UDim2.fromOffset(7, 45)
         end
     end
-    
+
     -- LOGGER CATEGORY BUTTONS
-    for index, category in ipairs(Categories) do
+    for _, category in ipairs(Categories) do
         local button = Instance.new("TextButton")
         button.Size = UDim2.new(0.25, -4, 1, 0)
         button.BackgroundColor3 = ButtonDark
         button.TextColor3 = White
-        button.Text = category == "FireServer" and "Fire" or
-            category == "InvokeServer" and "Invoke" or category
+        button.Text = category == "FireServer" and "Fire"
+            or category == "InvokeServer" and "Invoke"
+            or category
         button.TextSize = 9
         button.Font = Enum.Font.GothamBold
         button.Parent = CategoryFrame
@@ -499,7 +573,6 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     task.spawn(function()
         while ScreenGui.Parent do
             task.wait(0.5)
-
             if LoggerPage.Visible then
                 RefreshLogs()
             end
@@ -519,7 +592,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
 
     local function MakeLoggerButton(text, callback)
         local button = Instance.new("TextButton")
-        button.Size = UDim2.new(0.333, -4, 1, 0)
+        button.Size = UDim2.new(0.25, -4, 1, 0)
         button.BackgroundColor3 = ButtonDark
         button.TextColor3 = White
         button.Text = text
@@ -548,24 +621,39 @@ function GUI.Create(Config, Controller, Scythe, Logger)
         end
 
         Logger:SetEnabled(not Logger.Enabled)
-
         PauseButtonLogger.Text = Logger.Enabled
             and "PAUSE: OFF"
             or "PAUSE: ON"
     end)
 
-    MakeLoggerButton("COPY LOGS", function()
+    local CopyLogsButton
+    CopyLogsButton = MakeLoggerButton("COPY LOGS", function()
         if not Logger then
             return
         end
 
         local exported = Logger:Export()
+        local copied = false
 
-        if setclipboard then
-            pcall(function()
+        if type(setclipboard) == "function" then
+            copied = pcall(function()
                 setclipboard(exported)
             end)
         end
+
+        if not copied and type(toclipboard) == "function" then
+            copied = pcall(function()
+                toclipboard(exported)
+            end)
+        end
+
+        CopyLogsButton.Text = copied and "COPIED!" or "COPY FAILED"
+
+        task.delay(1.5, function()
+            if CopyLogsButton and CopyLogsButton.Parent then
+                CopyLogsButton.Text = "COPY LOGS"
+            end
+        end)
     end)
 
     RefreshLogs()
@@ -645,7 +733,6 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     UIS.InputChanged:Connect(function(input)
         if input == DragInput and Dragging then
             local delta = input.Position - DragStart
-
             Frame.Position = UDim2.new(
                 StartPosition.X.Scale,
                 StartPosition.X.Offset + delta.X,
@@ -687,7 +774,6 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     UIS.InputChanged:Connect(function(input)
         if input == BubbleInput and BubbleDragging then
             local delta = input.Position - BubbleStart
-
             Bubble.Position = UDim2.new(
                 BubblePosition.X.Scale,
                 BubblePosition.X.Offset + delta.X,
