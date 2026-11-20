@@ -39,6 +39,7 @@ local NPC = LoadModule("NPC.lua")
 local Teleport = LoadModule("Teleport.lua")
 local GUI = LoadModule("GUI.lua")
 local ScytheModule = LoadModule("Scythe.lua")
+local AutoClaimHousesModule = LoadModule("AutoClaimHouses.lua")
 local Logger = LoadModule("Logger.lua")
 local SpyAdapter = LoadModule("SpyAdapter.lua")
 
@@ -54,6 +55,7 @@ Controller = Teleport.new(Config, NPC, function(status)
 end)
 
 Scythe = ScytheModule.new()
+local AutoClaimHouses = AutoClaimHousesModule.new()
 
 -- TEMPORARILY DISABLED FOR CRASH TEST
 local SpyStarted = false
@@ -65,6 +67,7 @@ local Success, Result = pcall(function()
         Config,
         Controller,
         Scythe,
+        AutoClaimHouses,
         Logger
     )
 end)
@@ -75,3 +78,4 @@ if Success then
 else
     warn("ShortName Hub GUI ERROR: " .. tostring(Result))
 end
+    
