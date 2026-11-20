@@ -607,7 +607,8 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     -- AUTOMATIC LOGGER REFRESH
     task.spawn(function()
         while ScreenGui.Parent do
-            task.wait(0.5)
+            task.wait(1)
+
             if LoggerPage.Visible then
                 RefreshLogs()
             end
