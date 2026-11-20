@@ -5,7 +5,7 @@ local GuiService = game:GetService("GuiService")
 
 local GUI = {}
 
-function GUI.Create(Config, Controller, Scythe, AutoClaimHouses, Logger)
+function GUI.Create(Config, Controller, Scythe, Logger)
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "ShortNameHub"
     ScreenGui.ResetOnSpawn = false
@@ -452,40 +452,6 @@ function GUI.Create(Config, Controller, Scythe, AutoClaimHouses, Logger)
         end
     end, Color3.fromRGB(100, 65, 160))
 
-    -- INDIVIDUAL HOUSE TOGGLES (INSIDE REMOTES)
-    local HouseButtons = {}
-
-    for HouseNumber = 1, 3 do
-        local HouseId = HouseNumber
-        local HouseButton
-
-        HouseButton = MakeButton(
-            ScytheFolder,
-            "AUTO CLAIM HOUSE " .. HouseId .. ": OFF",
-            function()
-                local NewState = not AutoClaimHouses.IsHouseEnabled(HouseId)
-
-                AutoClaimHouses.SetHouseEnabled(HouseId, NewState)
-
-                HouseButton.Text = "AUTO CLAIM HOUSE " .. HouseId
-                    .. (NewState and ": ON" or ": OFF")
-
-                SetStatus(
-                    "HOUSE " .. HouseId
-                    .. (NewState and " ENABLED" or " DISABLED")
-                )
-
-                LogAction("House Toggle Changed", {
-                    House = HouseId,
-                    Enabled = NewState
-                })
-            end,
-            Color3.fromRGB(45, 115, 75)
-        )
-
-        HouseButtons[HouseId] = HouseButton
-    end
-
     -- REMOTE LOGGER PAGE
     Label(LoggerPage, "REMOTE LOGGER", 17, 30).Font = Enum.Font.GothamBold
     Label(LoggerPage, "LOCAL TEST MODE - no game remotes captured", 10, 22, Grey)
@@ -907,10 +873,6 @@ function GUI.Create(Config, Controller, Scythe, AutoClaimHouses, Logger)
 
         pcall(function()
             Scythe.Stop()
-        end)
-
-        pcall(function()
-            AutoClaimHouses.Stop()
         end)
 
         ScreenGui:Destroy()
