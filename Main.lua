@@ -55,14 +55,9 @@ end)
 
 Scythe = ScytheModule.new()
 
--- Connect SimpleSpy to Remote Logger
-local SpyStarted = SpyAdapter.Start(Logger)
-
-if SpyStarted then
-    print("ShortName Hub: Remote Logger connected to SimpleSpy!")
-else
-    warn("ShortName Hub: SimpleSpy not detected. Start SimpleSpy first.")
-end
+-- TEMPORARILY DISABLED FOR CRASH TEST
+local SpyStarted = false
+warn("ShortName Hub: Remote Spy temporarily disabled.")
 
 -- Create interface
 local Success, Result = pcall(function()
