@@ -465,7 +465,7 @@ function GUI.Create(Config, Controller, Scythe, AutoClaimHouses, Logger)
     end)
 
     local HousesButton
-    local HousesStarted = AutoClaimHouses.Start()
+    local HousesStarted = false
     HousesButton = MakeButton(
         ScytheFolder,
         HousesStarted and "AUTO CLAIM HOUSES: ON" or "AUTO CLAIM HOUSES: OFF",
