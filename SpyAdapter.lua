@@ -5,11 +5,17 @@ local SpyAdapter = {}
 
 local Logger
 local Enabled = false
+local HookInstalled = false
 
 local Hooked = {}
 local Connections = {}
+local OriginalNamecall
 
 local function IsRemote(instance)
+    if typeof(instance) ~= "Instance" then
+        return false
+    end
+
     return instance:IsA("RemoteEvent")
         or instance:IsA("RemoteFunction")
 end
@@ -24,71 +30,75 @@ local function Record(remote, method, args)
     end)
 end
 
-local function HookRemote(remote)
+local function ConnectIncoming(remote)
     if not Enabled or Hooked[remote] then
         return
     end
 
-    if not IsRemote(remote) then
+    if not remote:IsA("RemoteEvent") then
         return
     end
 
     Hooked[remote] = true
 
-    if remote:IsA("RemoteEvent") then
-        local originalFireServer
-
-        local success, err = pcall(function()
-            originalFireServer = hookfunction(
-                remote.FireServer,
-                function(self, ...)
-                    if self == remote then
-                        Record(remote, "FireServer", {...})
-                    end
-
-                    return originalFireServer(self, ...)
-                end
-            )
+    local success, connection = pcall(function()
+        return remote.OnClientEvent:Connect(function(...)
+            Record(remote, "OnClientEvent", {...})
         end)
+    end)
 
-        if not success then
-            warn("ShortName Hub: FireServer hook failed:", err)
-            Hooked[remote] = nil
-            return
-        end
-
-        local connected, connection = pcall(function()
-            return remote.OnClientEvent:Connect(function(...)
-                Record(remote, "OnClientEvent", {...})
-            end)
-        end)
-
-        if connected and connection then
-            table.insert(Connections, connection)
-        end
-
-    elseif remote:IsA("RemoteFunction") then
-        local originalInvokeServer
-
-        local success, err = pcall(function()
-            originalInvokeServer = hookfunction(
-                remote.InvokeServer,
-                function(self, ...)
-                    if self == remote then
-                        Record(remote, "InvokeServer", {...})
-                    end
-
-                    return originalInvokeServer(self, ...)
-                end
-            )
-        end)
-
-        if not success then
-            warn("ShortName Hub: InvokeServer hook failed:", err)
-            Hooked[remote] = nil
-            return
-        end
+    if success and connection then
+        table.insert(Connections, connection)
+    else
+        Hooked[remote] = nil
     end
+end
+
+local function InstallHook()
+    if HookInstalled then
+        return true
+    end
+
+    if type(hookmetamethod) ~= "function"
+        or type(getnamecallmethod) ~= "function" then
+        warn("ShortName Hub: Required hook functions unavailable")
+        return false
+    end
+
+    local function NamecallHook(self, ...)
+        local method = getnamecallmethod()
+
+        if Enabled and IsRemote(self) then
+            if method == "FireServer"
+                or method == "InvokeServer" then
+                Record(self, method, {...})
+            end
+        end
+
+        return OriginalNamecall(self, ...)
+    end
+
+    if type(newcclosure) == "function" then
+        NamecallHook = newcclosure(NamecallHook)
+    end
+
+    local success, result = pcall(function()
+        return hookmetamethod(
+            game,
+            "__namecall",
+            NamecallHook
+        )
+    end)
+
+    if not success then
+        warn("ShortName Hub: Namecall hook failed:", result)
+        return false
+    end
+
+    OriginalNamecall = result
+    HookInstalled = true
+
+    return true
 end
 
 function SpyAdapter.Start(LoggerModule)
@@ -102,19 +112,23 @@ function SpyAdapter.Start(LoggerModule)
         return false
     end
 
-    if type(hookfunction) ~= "function" then
-        warn("ShortName Hub: hookfunction is unavailable")
+    Logger = LoggerModule
+
+    if not InstallHook() then
+        Logger = nil
         return false
     end
 
-    Logger = LoggerModule
     Enabled = true
 
     for _, instance in ipairs(game:GetDescendants()) do
-        HookRemote(instance)
+        ConnectIncoming(instance)
     end
 
-    local connection = game.DescendantAdded:Connect(HookRemote)
+    local connection = game.DescendantAdded:Connect(function(instance)
+        ConnectIncoming(instance)
+    end)
+
     table.insert(Connections, connection)
 
     print("ShortName Hub: Remote Logger started!")
