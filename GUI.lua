@@ -1,54 +1,304 @@
-                {Color3.fromRGB(19,18,27),new.Dark},{Color3.fromRGB(55,48,69),new.ButtonAccentHover},
-                {Color3.fromRGB(48,40,63),new.ButtonAccentHover},{Color3.fromRGB(43,33,61),new.BubbleHover}
-            }
-            for _,pair in ipairs(pairsToMap) do
-                if c == pair[1] then return pair[2] end
-            end
-            return c
+
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local GuiService = game:GetService("GuiService")
+local TweenService = game:GetService("TweenService")
+local GUI = {}
+function GUI.Create(Config, Controller, Scythe, Logger)
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "ShortNameHub"
+    ScreenGui.ResetOnSpawn = false
+    ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    local success = pcall(function()
+        ScreenGui.Parent = gethui()
+    end)
+    if not success then
+        ScreenGui.Parent = game:GetService("CoreGui")
+    end
+    local Camera = workspace.CurrentCamera
+    local Viewport = Camera and Camera.ViewportSize or Vector2.new(800, 600)
+    local WindowWidth = math.max(300, math.min(620, Viewport.X - 20))
+    local WindowHeight = math.max(300, math.min(430, Viewport.Y - 40))
+    local Purple = Color3.fromRGB(145, 75, 255)
+    local Dark = Color3.fromRGB(12, 12, 17)
+    local Panel = Color3.fromRGB(23, 23, 31)
+    local ButtonDark = Color3.fromRGB(31, 31, 42)
+    local White = Color3.fromRGB(240, 240, 248)
+    local Grey = Color3.fromRGB(155, 155, 175)
+    local PurpleLight = Color3.fromRGB(185, 135, 255)
+    local Border = Color3.fromRGB(54, 48, 70)
+    local FastTween = TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+    local function Tween(obj, properties, info)
+        if obj and obj.Parent then
+            TweenService:Create(obj, info or FastTween, properties):Play()
         end
-        for _,o in ipairs(ScreenGui:GetDescendants()) do
-            if o:IsA("UIGradient") then
-                local points = {}
-                for _,point in ipairs(o.Color.Keypoints) do
-                    table.insert(points,ColorSequenceKeypoint.new(point.Time,MapColor(point.Value)))
-                end
-                o.Color = ColorSequence.new(points)
-            elseif o:IsA("UIStroke") then
-                o.Color = MapColor(o.Color)
-            elseif o:IsA("GuiObject") then
-                o.BackgroundColor3 = MapColor(o.BackgroundColor3)
-                if o:IsA("ScrollingFrame") then o.ScrollBarImageColor3 = MapColor(o.ScrollBarImageColor3) end
-            end
-            if o:IsA("TextLabel") or o:IsA("TextButton") or o:IsA("TextBox") then
-                o.TextColor3 = MapColor(o.TextColor3)
-                if o:IsA("TextBox") then o.PlaceholderColor3 = MapColor(o.PlaceholderColor3) end
-            end
-            if o:IsA("TextButton") then
-                local normal = o:GetAttribute("ThemeNormalColor")
-                local hover = o:GetAttribute("ThemeHoverColor")
-                if typeof(normal)=="Color3" then o:SetAttribute("ThemeNormalColor",MapColor(normal)) end
-                if typeof(hover)=="Color3" then o:SetAttribute("ThemeHoverColor",MapColor(hover)) end
-            end
+    end
+    local function AddGradient(obj, topColor, bottomColor, rotation)
+        local gradient = Instance.new("UIGradient")
+        gradient.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, topColor),
+            ColorSequenceKeypoint.new(1, bottomColor)
+        })
+        gradient.Rotation = rotation or 90
+        gradient.Parent = obj
+        return gradient
+    end
+    local function AddHover(button, normalColor, hoverColor)
+        button.AutoButtonColor = false
+        button.MouseEnter:Connect(function()
+            Tween(button, {BackgroundColor3 = hoverColor})
+        end)
+        button.MouseLeave:Connect(function()
+            Tween(button, {BackgroundColor3 = normalColor})
+        end)
+    end
+    local function Corner(obj, radius)
+        local c = Instance.new("UICorner")
+        c.CornerRadius = UDim.new(0, radius or 8)
+        c.Parent = obj
+    end
+    local function Stroke(obj, color, thickness)
+        local s = Instance.new("UIStroke")
+        s.Color = color or Purple
+        s.Thickness = thickness or 1
+        s.Transparency = 0.18
+        s.Parent = obj
+        return s
+    end
+    local function Label(parent, text, size, height, color)
+        local item = Instance.new("TextLabel")
+        item.Size = UDim2.new(1, 0, 0, height or 25)
+        item.BackgroundTransparency = 1
+        item.Text = text
+        item.TextColor3 = color or White
+        item.TextSize = size or 13
+        item.Font = Enum.Font.Gotham
+        item.TextXAlignment = Enum.TextXAlignment.Left
+        item.Parent = parent
+        return item
+    end
+    -- MAIN WINDOW
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.fromOffset(WindowWidth, WindowHeight)
+    Frame.Position = UDim2.new(0.5, -WindowWidth / 2, 0.5, -WindowHeight / 2)
+    Frame.BackgroundColor3 = Dark
+    Frame.BorderSizePixel = 0
+    Frame.Parent = ScreenGui
+    local WindowScale = Instance.new("UIScale")
+    WindowScale.Scale = 0.94
+    WindowScale.Parent = Frame
+    Corner(Frame, 14)
+    AddGradient(Frame, Color3.fromRGB(19, 18, 27), Dark, 90)
+    Stroke(Frame, Color3.fromRGB(105, 76, 150), 1.25)
+    local AccentLine = Instance.new("Frame")
+    AccentLine.Name = "AccentLine"
+    AccentLine.Size = UDim2.new(1, -28, 0, 2)
+    AccentLine.Position = UDim2.fromOffset(14, 48)
+    AccentLine.BackgroundColor3 = Purple
+    AccentLine.BorderSizePixel = 0
+    AccentLine.ZIndex = 3
+    AccentLine.Parent = Frame
+    AddGradient(AccentLine, PurpleLight, Purple, 0)
+    Corner(AccentLine, 2)
+    -- HEADER
+    local Header = Instance.new("Frame")
+    Header.Size = UDim2.new(1, 0, 0, 48)
+    Header.BackgroundColor3 = Dark
+    Header.BorderSizePixel = 0
+    Header.Parent = Frame
+    Corner(Header, 12)
+    AddGradient(Header, Color3.fromRGB(31, 25, 43), Dark, 90)
+    local HeaderTitle = Label(Header, "  SHORTNAME HUB", 15, 48)
+    HeaderTitle.Font = Enum.Font.GothamBold
+    HeaderTitle.Size = UDim2.new(1, -110, 0, 25)
+    HeaderTitle.Position = UDim2.fromOffset(2, 5)
+    HeaderTitle.TextSize = 15
+    local HeaderSubtitle = Label(Header, "CONTROL CENTER  •  PREMIUM BUILD", 8, 14, Grey)
+    HeaderSubtitle.Position = UDim2.fromOffset(15, 27)
+    HeaderSubtitle.Size = UDim2.new(1, -130, 0, 13)
+    HeaderSubtitle.Font = Enum.Font.GothamMedium
+    HeaderSubtitle.TextTransparency = 0.12
+    local MinButton = Instance.new("TextButton")
+    MinButton.Size = UDim2.fromOffset(38, 34)
+    MinButton.Position = UDim2.new(1, -88, 0, 7)
+    MinButton.BackgroundColor3 = ButtonDark
+    MinButton.Text = "—"
+    MinButton.TextColor3 = White
+    MinButton.TextSize = 19
+    MinButton.Font = Enum.Font.GothamBold
+    MinButton.Parent = Frame
+    MinButton.ZIndex = 5
+    Corner(MinButton, 8)
+    Stroke(MinButton, Border, 1)
+    AddHover(MinButton, ButtonDark, Color3.fromRGB(55, 48, 69))
+    local ExitButton = Instance.new("TextButton")
+    ExitButton.Size = UDim2.fromOffset(38, 34)
+    ExitButton.Position = UDim2.new(1, -44, 0, 7)
+    ExitButton.BackgroundColor3 = ButtonDark
+    ExitButton.Text = "×"
+    ExitButton.TextColor3 = Color3.fromRGB(255, 170, 180)
+    ExitButton.TextSize = 23
+    ExitButton.Font = Enum.Font.Gotham
+    ExitButton.Parent = Header
+    Corner(ExitButton, 8)
+    Stroke(ExitButton, Border, 1)
+    AddHover(ExitButton, ButtonDark, Color3.fromRGB(95, 43, 55))
+    -- SIDEBAR
+    local SidebarWidth = math.min(155, WindowWidth * 0.34)
+    local Sidebar = Instance.new("Frame")
+    Sidebar.Position = UDim2.fromOffset(10, 58)
+    Sidebar.Size = UDim2.new(0, SidebarWidth, 1, -68)
+    Sidebar.BackgroundColor3 = Panel
+    Sidebar.BorderSizePixel = 0
+    Sidebar.Parent = Frame
+    Corner(Sidebar, 11)
+    AddGradient(Sidebar, Color3.fromRGB(27, 26, 37), Panel, 90)
+    Stroke(Sidebar, Border, 1)
+    local SideLayout = Instance.new("UIListLayout")
+    SideLayout.Padding = UDim.new(0, 7)
+    SideLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    SideLayout.Parent = Sidebar
+    local SidePadding = Instance.new("UIPadding")
+    SidePadding.PaddingTop = UDim.new(0, 9)
+    SidePadding.PaddingLeft = UDim.new(0, 8)
+    SidePadding.PaddingRight = UDim.new(0, 8)
+    SidePadding.Parent = Sidebar
+    local function MakeNav(text, order)
+        local b = Instance.new("TextButton")
+        b.Name = text
+        b.LayoutOrder = order
+        b.Size = UDim2.new(1, 0, 0, 43)
+        b.BackgroundColor3 = ButtonDark
+        b.TextColor3 = White
+        b.Text = text
+        b.TextSize = WindowWidth < 380 and 11 or 13
+        b.Font = Enum.Font.GothamBold
+        b.Parent = Sidebar
+        Corner(b, 8)
+        Stroke(b, Border, 1)
+        return b
+    end
+    local SettingsNav = MakeNav("⚙  Settings", 1)
+    local GameNav = MakeNav("◆  Noob Incremental", 2)
+    local LoggerNav = MakeNav("◉  Remote Logger", 3)
+    local SoonNav = MakeNav("＋  Coming Soon", 4)
+    -- CONTENT AREA
+    local Content = Instance.new("Frame")
+    Content.Position = UDim2.new(0, SidebarWidth + 20, 0, 58)
+    Content.Size = UDim2.new(1, -SidebarWidth - 30, 1, -68)
+    Content.BackgroundColor3 = Panel
+    Content.BorderSizePixel = 0
+    Content.Parent = Frame
+    Corner(Content, 11)
+    AddGradient(Content, Color3.fromRGB(27, 26, 37), Panel, 90)
+    Stroke(Content, Border, 1)
+    local function MakePage(name)
+        local page = Instance.new("ScrollingFrame")
+        page.Name = name
+        page.Size = UDim2.new(1, -16, 1, -16)
+        page.Position = UDim2.fromOffset(8, 8)
+        page.BackgroundTransparency = 1
+        page.BorderSizePixel = 0
+        page.ScrollBarThickness = 3
+        page.ScrollBarImageColor3 = Purple
+        page.CanvasSize = UDim2.fromOffset(0, 0)
+        page.Visible = false
+        page.Parent = Content
+        local layout = Instance.new("UIListLayout")
+        layout.Padding = UDim.new(0, 8)
+        layout.SortOrder = Enum.SortOrder.LayoutOrder
+        layout.Parent = page
+        local padding = Instance.new("UIPadding")
+        padding.PaddingBottom = UDim.new(0, 10)
+        padding.Parent = page
+        layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            page.CanvasSize = UDim2.fromOffset(0, layout.AbsoluteContentSize.Y + 15)
+        end)
+        return page
+    end
+    local SettingsPage = MakePage("Settings")
+    local GamePage = MakePage("NoobIncremental")
+    local LoggerPage = MakePage("RemoteLogger")
+    local SoonPage = MakePage("ComingSoon")
+    local CurrentPage = nil
+    local CurrentAccent = {Color=Purple, Light=PurpleLight, Active=Color3.fromRGB(55,42,77)}
+    local CategoryButtons = {}
+    local SelectedCategory = "All"
+    local function SelectPage(page)
+        local pages = {Settings=SettingsPage, Game=GamePage, Logger=LoggerPage, Soon=SoonPage}
+        for name, pageObject in pairs(pages) do
+            if name == page then
+                pageObject.Visible = true
+                pageObject.Position = UDim2.fromOffset(15,8)
+                Tween(pageObject,{Position=UDim2.fromOffset(8,8)},TweenInfo.new(0.22,Enum.EasingStyle.Quint,Enum.EasingDirection.Out))
+            else pageObject.Visible = false end
         end
-        Dark,Panel,ButtonDark,Border = new.Dark,new.Panel,new.Button,new.Border
-        Purple,PurpleLight = new.Color,new.Light
-        ThemePalette = new
+        CurrentPage = page
+        local activeColor = CurrentAccent.Active
+        local function StyleNav(button, active)
+            Tween(button, {
+                BackgroundColor3 = active and activeColor or ButtonDark
+            })
+            local outline = button:FindFirstChildOfClass("UIStroke")
+            if outline then
+                Tween(outline, {
+                    Color = active and PurpleLight or Border,
+                    Transparency = active and 0 or 0.18,
+                    Thickness = active and 1.35 or 1
+                })
+            end
+            button.TextColor3 = active and Color3.fromRGB(255, 255, 255) or Grey
+        end
+        StyleNav(SettingsNav, page == "Settings")
+        StyleNav(GameNav, page == "Game")
+        StyleNav(LoggerNav, page == "Logger")
+        StyleNav(SoonNav, page == "Soon")
+    end
+    SettingsNav.Activated:Connect(function()
+        SelectPage("Settings")
+    end)
+    GameNav.Activated:Connect(function()
+        SelectPage("Game")
+    end)
+    LoggerNav.Activated:Connect(function()
+        SelectPage("Logger")
+    end)
+    SoonNav.Activated:Connect(function()
+        SelectPage("Soon")
+    end)
+    -- SETTINGS
+    Label(SettingsPage, "SETTINGS", 17, 30).Font = Enum.Font.GothamBold
+    Label(SettingsPage, "Personalize your hub experience.", 12, 23, Grey)
+    Label(SettingsPage, "APPEARANCE", 13, 25, PurpleLight).Font = Enum.Font.GothamBold
+    Label(SettingsPage, "Accent color", 11, 19, Grey)
+    local AccentPresets = {
+        {Name="Purple",Color=Color3.fromRGB(145,75,255),Light=Color3.fromRGB(185,135,255),Active=Color3.fromRGB(55,42,77)},
+        {Name="Blue",Color=Color3.fromRGB(65,145,255),Light=Color3.fromRGB(135,195,255),Active=Color3.fromRGB(35,57,85)},
+        {Name="Red",Color=Color3.fromRGB(235,75,95),Light=Color3.fromRGB(255,145,155),Active=Color3.fromRGB(82,39,48)},
+        {Name="Green",Color=Color3.fromRGB(55,190,125),Light=Color3.fromRGB(125,235,175),Active=Color3.fromRGB(35,72,55)},
+        {Name="Cyan",Color=Color3.fromRGB(35,190,205),Light=Color3.fromRGB(120,235,240),Active=Color3.fromRGB(32,70,78)}
+    }
+    local function IsAccentColor(c)
+        return c==Purple or c==PurpleLight or c==CurrentAccent.Active or c==CurrentAccent.Light or c==CurrentAccent.Color or c==Color3.fromRGB(75,50,115) or c==Color3.fromRGB(100,65,160) or c==Color3.fromRGB(75,55,115) or c==Color3.fromRGB(94,68,137)
+    end
+    local function ApplyAccent(preset)
+        local old = CurrentAccent
         CurrentAccent = preset
-        AccentLine.BackgroundColor3 = new.Color
-        for name,b in pairs(CategoryButtons) do
-            local active = name == SelectedCategory
-            b.BackgroundColor3 = active and new.Active or ButtonDark
-            local st = b:FindFirstChildOfClass("UIStroke")
-            if st then st.Color = active and new.Light or new.Border end
+        for _,o in ipairs(ScreenGui:GetDescendants()) do
+            if o:IsA("UIStroke") and IsAccentColor(o.Color) then o.Color=preset.Light
+            elseif o:IsA("ScrollingFrame") and (o.ScrollBarImageColor3==Purple or o.ScrollBarImageColor3==old.Color) then o.ScrollBarImageColor3=preset.Color
+            elseif o:IsA("TextLabel") or o:IsA("TextButton") then
+                if o.TextColor3==Purple or o.TextColor3==PurpleLight or o.TextColor3==old.Light then o.TextColor3=preset.Light end
+                if o:IsA("TextButton") and (o.BackgroundColor3==old.Active or o.BackgroundColor3==Color3.fromRGB(75,50,115) or o.BackgroundColor3==Color3.fromRGB(100,65,160)) then o.BackgroundColor3=preset.Active end
+            end
         end
+        Purple,PurpleLight=preset.Color,preset.Light
         for _,nav in ipairs({SettingsNav,GameNav,LoggerNav,SoonNav}) do
-            local active = (CurrentPage=="Settings" and nav==SettingsNav) or
-                (CurrentPage=="Game" and nav==GameNav) or
-                (CurrentPage=="Logger" and nav==LoggerNav) or
-                (CurrentPage=="Soon" and nav==SoonNav)
-            nav.BackgroundColor3 = active and new.Active or new.Button
-            local st = nav:FindFirstChildOfClass("UIStroke")
-            if st then st.Color = active and new.Light or new.Border end
+            local active=(CurrentPage=="Settings" and nav==SettingsNav) or (CurrentPage=="Game" and nav==GameNav) or (CurrentPage=="Logger" and nav==LoggerNav) or (CurrentPage=="Soon" and nav==SoonNav)
+            if active then nav.BackgroundColor3=preset.Active local st=nav:FindFirstChildOfClass("UIStroke") if st then st.Color=preset.Light end end
+        end
+        for name,b in pairs(CategoryButtons) do
+            if name==SelectedCategory then b.BackgroundColor3=preset.Active local st=b:FindFirstChildOfClass("UIStroke") if st then st.Color=preset.Light end end
         end
     end
     local ColorRow=Instance.new("Frame") ColorRow.Size=UDim2.new(1,0,0,34) ColorRow.BackgroundTransparency=1 ColorRow.Parent=SettingsPage
@@ -328,6 +578,322 @@
     LogLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
         LogContainer.CanvasSize = UDim2.fromOffset(0, LogLayout.AbsoluteContentSize.Y + 15)
     end)
-I caught a formatting problem while sending the long replacement: the code was duplicated across the streamed sections. **Please don't paste that code.**
-
-Would you like me to update `GUI.lua` directly in your GitHub repository instead? That avoids risking a broken copy-and-paste.
+    local LastRenderKey = nil
+    local DisplayLimit = 30
+    local function RefreshLogs(force)
+        if not Logger then
+            StatsLabel.Text = "LOGGER MODULE NOT LOADED"
+            return
+        end
+        local version = Logger:GetVersion()
+        local renderKey = tostring(version) .. "|"
+            .. SelectedCategory .. "|" .. SearchBox.Text
+        if not force and renderKey == LastRenderKey then
+            return
+        end
+        LastRenderKey = renderKey
+        for _, child in ipairs(LogContainer:GetChildren()) do
+            if child:IsA("Frame") or child:IsA("TextLabel") then
+                child:Destroy()
+            end
+        end
+        local stats = Logger:GetStats()
+        StatsLabel.Text = string.format(
+            "TOTAL: %d  |  FIRE: %d  |  INVOKE: %d",
+            stats.Total,
+            stats.FireServer,
+            stats.InvokeServer
+        )
+        local entries = Logger:GetLogs(
+            SelectedCategory,
+            SearchBox.Text
+        )
+        if #entries == 0 then
+            local Empty = Label(
+                LogContainer,
+                "No matching logs found.",
+                11,
+                35,
+                Grey
+            )
+            Empty.TextXAlignment = Enum.TextXAlignment.Center
+            return
+        end
+        local shown = math.min(#entries, DisplayLimit)
+        for i = 1, shown do
+            local entry = entries[i]
+            local Card = Instance.new("Frame")
+            Card.Size = UDim2.new(1, -4, 0, 68)
+            Card.BackgroundColor3 = Panel
+            Card.BorderSizePixel = 0
+            Card.Parent = LogContainer
+            Corner(Card, 8)
+            Stroke(Card, Border, 1)
+            local Name = Label(
+                Card,
+                entry.Name .. "  [" .. entry.Method .. "]",
+                10,
+                24,
+                White
+            )
+            Name.Position = UDim2.fromOffset(7, 2)
+            Name.Size = UDim2.new(1, -14, 0, 22)
+            Name.Font = Enum.Font.GothamBold
+            local Path = Label(Card, entry.Path, 9, 18, Grey)
+            Path.Position = UDim2.fromOffset(7, 25)
+            Path.Size = UDim2.new(1, -14, 0, 18)
+            Path.TextTruncate = Enum.TextTruncate.AtEnd
+            local Time = Label(Card, entry.Timestamp, 9, 17, Purple)
+            Time.Position = UDim2.fromOffset(7, 45)
+        end
+    end
+    -- LOGGER CATEGORY BUTTONS
+    for _, category in ipairs(Categories) do
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0.25, -4, 1, 0)
+        button.BackgroundColor3 = ButtonDark
+        button.TextColor3 = White
+        button.Text = category == "FireServer" and "Fire"
+            or category == "InvokeServer" and "Invoke"
+            or category
+        button.TextSize = 9
+        button.Font = Enum.Font.GothamBold
+        button.Parent = CategoryFrame
+        Corner(button, 7)
+        Stroke(button, Border, 1)
+        CategoryButtons[category] = button
+        button.Activated:Connect(function()
+            SelectedCategory = category
+            for name, categoryButton in pairs(CategoryButtons) do
+                categoryButton.BackgroundColor3 =
+                    name == SelectedCategory
+                    and Color3.fromRGB(75, 50, 115)
+                    or ButtonDark
+                local outline = categoryButton:FindFirstChildOfClass("UIStroke")
+                if outline then
+                    outline.Color = name == SelectedCategory and PurpleLight or Border
+                end
+            end
+            RefreshLogs()
+        end)
+    end
+    CategoryButtons.All.BackgroundColor3 = Color3.fromRGB(75, 50, 115)
+    SearchBox:GetPropertyChangedSignal("Text"):Connect(RefreshLogs)
+    -- AUTOMATIC LOGGER REFRESH
+    task.spawn(function()
+        while ScreenGui.Parent do
+            task.wait(1)
+            if LoggerPage.Visible then
+                RefreshLogs()
+            end
+        end
+    end)
+    -- LOGGER CONTROLS
+    local LoggerControls = Instance.new("Frame")
+    LoggerControls.Size = UDim2.new(1, 0, 0, 38)
+    LoggerControls.BackgroundTransparency = 1
+    LoggerControls.Parent = LoggerPage
+    local ControlsLayout = Instance.new("UIListLayout")
+    ControlsLayout.FillDirection = Enum.FillDirection.Horizontal
+    ControlsLayout.Padding = UDim.new(0, 5)
+    ControlsLayout.Parent = LoggerControls
+    local function MakeLoggerButton(text, callback)
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0.2, -4, 1, 0)
+        button.BackgroundColor3 = ButtonDark
+        button.TextColor3 = White
+        button.Text = text
+        button.TextSize = 10
+        button.Font = Enum.Font.GothamBold
+        button.Parent = LoggerControls
+        Corner(button, 7)
+        Stroke(button, Border, 1)
+        AddHover(button, ButtonDark, Color3.fromRGB(48, 40, 63))
+        button.Activated:Connect(callback)
+        return button
+    end
+    MakeLoggerButton("REFRESH", RefreshLogs)
+    MakeLoggerButton("TEST", function()
+        if not Logger then
+            return
+        end
+        local testRemote = Instance.new("Folder")
+        testRemote.Name = "ShortNameLoggerTest"
+        Logger:Record(testRemote, "Test", {
+            Source = "Local test",
+            Value = 123
+        })
+        testRemote:Destroy()
+        RefreshLogs(true)
+    end)
+    MakeLoggerButton("CLEAR", function()
+        if Logger then
+            Logger:Clear()
+        end
+        RefreshLogs()
+    end)
+    local PauseButtonLogger
+    PauseButtonLogger = MakeLoggerButton("PAUSE: OFF", function()
+        if not Logger then
+            return
+        end
+        Logger:SetEnabled(not Logger.Enabled)
+        PauseButtonLogger.Text = Logger.Enabled
+            and "PAUSE: OFF"
+            or "PAUSE: ON"
+    end)
+    local CopyLogsButton
+    CopyLogsButton = MakeLoggerButton("COPY LOGS", function()
+        if not Logger then
+            return
+        end
+        local exported = Logger:Export()
+        local copied = false
+        if type(setclipboard) == "function" then
+            copied = pcall(function()
+                setclipboard(exported)
+            end)
+        end
+        if not copied and type(toclipboard) == "function" then
+            copied = pcall(function()
+                toclipboard(exported)
+            end)
+        end
+        CopyLogsButton.Text = copied and "COPIED!" or "COPY FAILED"
+        task.delay(1.5, function()
+            if CopyLogsButton and CopyLogsButton.Parent then
+                CopyLogsButton.Text = "COPY LOGS"
+            end
+        end)
+    end)
+    RefreshLogs()
+    -- COMING SOON PAGE
+    Label(SoonPage, "COMING SOON", 17, 30).Font = Enum.Font.GothamBold
+    Label(SoonPage, "More features are being worked on.", 12, 25, Grey)
+    local SoonCard = Instance.new("Frame")
+    SoonCard.Size = UDim2.new(1, 0, 0, 75)
+    SoonCard.BackgroundColor3 = ButtonDark
+    SoonCard.BorderSizePixel = 0
+    SoonCard.Parent = SoonPage
+    Corner(SoonCard, 10)
+    Stroke(SoonCard, Border, 1)
+    AddGradient(SoonCard, Color3.fromRGB(36, 31, 49), ButtonDark, 90)
+    local SoonText = Label(SoonCard, "Stay tuned for future updates!", 12, 75, White)
+    SoonText.TextXAlignment = Enum.TextXAlignment.Center
+    -- MINIMIZE BUBBLE
+    local Bubble = Instance.new("TextButton")
+    Bubble.Name = "ShortNameBubble"
+    Bubble.Size = UDim2.fromOffset(55, 55)
+    Bubble.Position = UDim2.new(0, 15, 0.5, -27)
+    Bubble.BackgroundColor3 = Dark
+    Bubble.Text = "SN"
+    Bubble.TextColor3 = White
+    Bubble.TextSize = 17
+    Bubble.Font = Enum.Font.GothamBold
+    Bubble.Visible = false
+    Bubble.Parent = ScreenGui
+    Corner(Bubble, 50)
+    AddGradient(Bubble, Color3.fromRGB(42, 31, 62), Dark, 90)
+    Stroke(Bubble, PurpleLight, 2)
+    AddHover(Bubble, Dark, Color3.fromRGB(43, 33, 61))
+    local Minimized = false
+    MinButton.Activated:Connect(function()
+        if Minimized then return end
+        Minimized=true
+        Tween(WindowScale,{Scale=0.78},TweenInfo.new(0.2,Enum.EasingStyle.Back,Enum.EasingDirection.In))
+        task.delay(0.16,function() if ScreenGui.Parent and Minimized then Frame.Visible=false Bubble.Visible=true Bubble.Size=UDim2.fromOffset(42,42) Tween(Bubble,{Size=UDim2.fromOffset(55,55)},TweenInfo.new(0.24,Enum.EasingStyle.Back,Enum.EasingDirection.Out)) end end)
+    end)
+    Bubble.Activated:Connect(function()
+        Minimized=false Bubble.Visible=false Frame.Visible=true WindowScale.Scale=0.78
+        Tween(WindowScale,{Scale=1},TweenInfo.new(0.28,Enum.EasingStyle.Back,Enum.EasingDirection.Out))
+    end)
+    -- WINDOW DRAGGING
+    local Dragging = false
+    local DragInput
+    local DragStart
+    local StartPosition
+    Header.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            Dragging = true
+            DragStart = input.Position
+            StartPosition = Frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    Dragging = false
+                end
+            end)
+        end
+    end)
+    Header.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+            DragInput = input
+        end
+    end)
+    UIS.InputChanged:Connect(function(input)
+        if input == DragInput and Dragging then
+            local delta = input.Position - DragStart
+            Frame.Position = UDim2.new(
+                StartPosition.X.Scale,
+                StartPosition.X.Offset + delta.X,
+                StartPosition.Y.Scale,
+                StartPosition.Y.Offset + delta.Y
+            )
+        end
+    end)
+    -- BUBBLE DRAGGING
+    local BubbleDragging = false
+    local BubbleInput
+    local BubbleStart
+    local BubblePosition
+    Bubble.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+            BubbleDragging = true
+            BubbleInput = input
+            BubbleStart = input.Position
+            BubblePosition = Bubble.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    BubbleDragging = false
+                end
+            end)
+        end
+    end)
+    Bubble.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch then
+            BubbleInput = input
+        end
+    end)
+    UIS.InputChanged:Connect(function(input)
+        if input == BubbleInput and BubbleDragging then
+            local delta = input.Position - BubbleStart
+            Bubble.Position = UDim2.new(
+                BubblePosition.X.Scale,
+                BubblePosition.X.Offset + delta.X,
+                BubblePosition.Y.Scale,
+                BubblePosition.Y.Offset + delta.Y
+            )
+        end
+    end)
+    -- EXIT
+    ExitButton.Activated:Connect(function()
+        pcall(function()
+            Controller.Stop()
+        end)
+        pcall(function()
+            Scythe.Stop()
+        end)
+        ScreenGui:Destroy()
+    end)
+    SelectPage("Settings")
+    Tween(WindowScale,{Scale=1},TweenInfo.new(0.38,Enum.EasingStyle.Back,Enum.EasingDirection.Out))
+    return {
+        SetStatus = SetStatus,
+        RefreshLogs = RefreshLogs,
+        ScreenGui = ScreenGui
+    }
+end
+return GUI
