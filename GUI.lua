@@ -5,7 +5,7 @@ local GuiService = game:GetService("GuiService")
 
 local GUI = {}
 
-function GUI.Create(Config, Controller)
+function GUI.Create(Config, Controller, Scythe)
     local Player = Players.LocalPlayer
 
     local ScreenGui = Instance.new("ScreenGui")
@@ -359,6 +359,45 @@ function GUI.Create(Config, Controller)
         end
     end, Color3.fromRGB(45, 115, 75))
 
+    -- Sythe Enchant Auto Roll
+    Config.ScytheSpeed = math.clamp(
+        tonumber(Config.ScytheSpeed) or 1,
+        1,
+        100
+    )
+
+    MakeBox("SCYTHE ROLL SPEED (1-100 CPS)", Config.ScytheSpeed, function(value)
+        Config.ScytheSpeed = math.clamp(
+            tonumber(value) or 1,
+            1,
+            100
+        )
+
+        Scythe.SetSpeed(Config.ScytheSpeed)
+    end)
+
+    Scythe.SetSpeed(Config.ScytheSpeed)
+
+    local ScytheButton
+
+    ScytheButton = MakeButton("SYTHE ENCHANT AUTO ROLL: OFF", function()
+        if Scythe.IsEnabled() then
+            Scythe.Stop()
+            ScytheButton.Text = "SYTHE ENCHANT AUTO ROLL: OFF"
+            SetStatus("SCYTHE ROLL STOPPED")
+        else
+            local success, message = Scythe.Start()
+
+            if success then
+                ScytheButton.Text = "SYTHE ENCHANT AUTO ROLL: ON"
+                SetStatus("SCYTHE ROLL RUNNING")
+            else
+                ScytheButton.Text = "SYTHE ENCHANT AUTO ROLL: OFF"
+                SetStatus(message or "SCYTHE ERROR")
+            end
+        end
+    end, Color3.fromRGB(100, 65, 160))
+
     -- Coming Soon page
     Label(SoonPage, "COMING SOON", 18, 35).Font = Enum.Font.GothamBold
 
@@ -515,12 +554,15 @@ function GUI.Create(Config, Controller)
 
     ExitButton.Activated:Connect(function()
         Controller.Stop()
+        Scythe.Stop()
         ScreenGui:Destroy()
     end)
 
     return {
         SetStatus = SetStatus,
         Destroy = function()
+            Controller.Stop()
+            Scythe.Stop()
             ScreenGui:Destroy()
         end
     }
