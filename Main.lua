@@ -26,19 +26,20 @@ pcall(function()
     game:GetService("GuiService"):SetGameplayPausedNotificationEnabled(false)
 end)
 
--- Key system must be passed before loading the hub
+-- Key system
 local KeySystem = LoadModule("KeySystem.lua")
 
 if not KeySystem.Start() then
     return
 end
 
--- Load hub modules
+-- Load modules
 local Config = LoadModule("Config.lua")
 local NPC = LoadModule("NPC.lua")
 local Teleport = LoadModule("Teleport.lua")
 local GUI = LoadModule("GUI.lua")
 local ScytheModule = LoadModule("Scythe.lua")
+local Logger = LoadModule("Logger.lua")
 
 -- Create controllers
 local Controller
@@ -53,5 +54,10 @@ end)
 
 Scythe = ScytheModule.new()
 
--- Create interface
-Interface = GUI.Create(Config, Controller, Scythe)
+-- Create interface with Logger
+Interface = GUI.Create(
+    Config,
+    Controller,
+    Scythe,
+    Logger
+)
