@@ -21,7 +21,19 @@ local function LoadModule(name)
     return result
 end
 
--- Load modules
+-- Disable Roblox paused notification
+pcall(function()
+    game:GetService("GuiService"):SetGameplayPausedNotificationEnabled(false)
+end)
+
+-- Key system must be passed before loading the hub
+local KeySystem = LoadModule("KeySystem.lua")
+
+if not KeySystem.Start() then
+    return
+end
+
+-- Load hub modules
 local Config = LoadModule("Config.lua")
 local NPC = LoadModule("NPC.lua")
 local Teleport = LoadModule("Teleport.lua")
