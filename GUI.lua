@@ -426,7 +426,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     
     -- REMOTE LOGGER PAGE
     Label(LoggerPage, "REMOTE LOGGER", 17, 30).Font = Enum.Font.GothamBold
-    Label(LoggerPage, "Monitor captured remote activity", 11, 22, Grey)
+    Label(LoggerPage, "LOCAL TEST MODE - no game remotes captured", 10, 22, Grey)
 
     local StatsLabel = Label(LoggerPage, "TOTAL: 0  |  FIRE: 0  |  INVOKE: 0", 10, 25, Grey)
 
@@ -598,6 +598,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
 
             RefreshLogs()
         end)
+
     end
 
     CategoryButtons.All.BackgroundColor3 = Color3.fromRGB(75, 50, 115)
@@ -628,7 +629,7 @@ function GUI.Create(Config, Controller, Scythe, Logger)
 
     local function MakeLoggerButton(text, callback)
         local button = Instance.new("TextButton")
-        button.Size = UDim2.new(0.25, -4, 1, 0)
+        button.Size = UDim2.new(0.2, -4, 1, 0)
         button.BackgroundColor3 = ButtonDark
         button.TextColor3 = White
         button.Text = text
@@ -642,6 +643,22 @@ function GUI.Create(Config, Controller, Scythe, Logger)
     end
 
     MakeLoggerButton("REFRESH", RefreshLogs)
+    MakeLoggerButton("TEST", function()
+        if not Logger then
+            return
+        end
+
+        local testRemote = Instance.new("Folder")
+        testRemote.Name = "ShortNameLoggerTest"
+
+        Logger:Record(testRemote, "Test", {
+            Source = "Local test",
+            Value = 123
+        })
+
+        testRemote:Destroy()
+        RefreshLogs(true)
+    end)
 
     MakeLoggerButton("CLEAR", function()
         if Logger then
